@@ -66,9 +66,9 @@ A binary operator can be defined as prefix (`+ x y`), infix (`x + y`), or postfi
 
 A ternary operator is one which concerns three arguments.
 
-### Extended Prefix / Postfix
+### Extended Operators
 
-Operators making use of the prefix or postfix notation can be extended indefinitely. An operator level specified as prefix or postfix can include operators with any number of arguments. Specified use of these formats can however restrict functionality. For operators with multiple arguments, associativity works identically to binary operators.
+Operators making use of the prefix or postfix notation can be extended indefinitely as long as there do not exist any implicit operations. For operators with multiple arguments, associativity works identically to binary operators. In order to support extended infix operators, a symbol must separate all arguments. If not, at least one is necessary, and the same implicit operation restriction applies.
 
 ### Prefix Flush
 
@@ -76,4 +76,4 @@ During parsing, when encountering a prefix operator of lower priority than the m
 
 ### Colliding Operator Symbols
 
-Multiple operators may have the same symbol. In some cases, this results in one or more operators which are left unused. The simplest case where multiple operators can have the same symbol, is when one is a prefix operator, and the other is not. Therefore, there can only ever be at most two operators a symbol can represent.
+Multiple operators may have the same symbol. In some cases, this results in one or more operators which are left unused, and therefore will prematurely end translation. The simplest case where multiple operators can have the same symbol is when one is a prefix operator, and the other is not. Therefore, there can only ever be at most two operators a symbol can represent.
