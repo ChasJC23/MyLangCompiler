@@ -11,7 +11,11 @@ const (
 )
 
 const (
-	PREPROCESSOR = "#"
+	PREPROCESSOR        = '#'
+	LINE_COMMENT        = ';'
+	START_BLOCK_COMMENT = '['
+	STOP_BLOCK_COMMENT  = ']'
+	NEW_LINE            = '\n'
 )
 
 type Tokeniser struct {
@@ -21,20 +25,53 @@ type Tokeniser struct {
 	operators interface{}
 }
 
-func ReadToken(reader *bufio.Reader) int {
-	currentRune, _, err := reader.ReadRune()
-	// ignore whitespace
-	for unicode.IsSpace(currentRune) {
-		currentRune, _, err = reader.ReadRune()
-	}
+func (tokeniser *Tokeniser) ReadToken() {
 
-	// if we've reached the end of the file
+	// ignore comments and surrounding whitespace if present
+	tokeniser.skipComments()
+
+}
+
+func (tokeniser *Tokeniser) readRune() {
+	currentRune, _, err := tokeniser.reader.ReadRune()
 	if err == io.EOF {
-		return EOF
-	} else if err != nil {
+		tokeniser.currRune = '\000'
+	} else if err == nil {
+		tokeniser.currRune = currentRune
+	} else {
 		// FUCK FUCK FUCK
 		panic(err)
 	}
+}
 
-	return 1
+func (tokeniser *Tokeniser) skipWhitespace() {
+	for unicode.IsSpace(tokeniser.currRune) {
+		tokeniser.readRune()
+	}
+}
+
+func (tokeniser *Tokeniser) skipComments() {
+
+	tokeniser.skipWhitespace()
+
+	// while a comment exists
+	for tokeniser.currRune == START_BLOCK_COMMENT || tokeniser.currRune == LINE_COMMENT {
+
+		// remove block comments
+		if tokeniser.currRune == START_BLOCK_COMMENT {
+			for tokeniser.currRune != STOP_BLOCK_COMMENT {
+				tokeniser.readRune()
+			}
+
+			// remove line comments
+		} else if tokeniser.currRune == LINE_COMMENT {
+			for tokeniser.currRune != NEW_LINE {
+				tokeniser.readRune()
+			}
+		}
+
+		// remove succeeding whitespace ready to check for more comments
+		// or start reading source code instead
+		tokeniser.skipWhitespace()
+	}
 }

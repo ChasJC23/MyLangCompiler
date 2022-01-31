@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -26,5 +25,5 @@ func main() {
 	defer srcFile.Close()
 
 	// using runes
-	srcReader := bufio.NewReader(srcFile)
+	// srcReader := bufio.NewReader(srcFile)
 }
