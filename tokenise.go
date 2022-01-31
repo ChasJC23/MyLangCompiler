@@ -62,9 +62,9 @@ func (tokeniser *Tokeniser) skipComments() {
 			for tokeniser.currRune != STOP_BLOCK_COMMENT {
 				tokeniser.readRune()
 			}
-
-			// remove line comments
-		} else if tokeniser.currRune == LINE_COMMENT {
+		} else
+		// remove line comments
+		if tokeniser.currRune == LINE_COMMENT {
 			for tokeniser.currRune != NEW_LINE {
 				tokeniser.readRune()
 			}
