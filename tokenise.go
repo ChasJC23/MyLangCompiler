@@ -22,13 +22,23 @@ type Tokeniser struct {
 	reader    *bufio.Reader
 	currRune  rune
 	currToken int
-	operators interface{}
+	operators OpContext
 }
 
 func (tokeniser *Tokeniser) ReadToken() {
 
 	// ignore comments and surrounding whitespace if present
 	tokeniser.skipComments()
+
+	// detect EOF
+	if tokeniser.currRune == '\000' {
+		tokeniser.currToken = EOF
+		return
+	}
+
+	// TODO: literals
+
+	// operators
 
 }
 
