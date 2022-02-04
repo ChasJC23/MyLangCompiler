@@ -125,10 +125,11 @@ func (tk *Tokeniser) skipComments() {
 			for tk.currRune != STOP_BLOCK_COMMENT {
 				tk.readRune()
 			}
+			tk.readRune()
 		} else
 		// remove line comments
 		if tk.currRune == LINE_COMMENT {
-			for tk.currRune != NEW_LINE {
+			for tk.currRune != NEW_LINE && tk.currRune != EOF {
 				tk.readRune()
 			}
 		}

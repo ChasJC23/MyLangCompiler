@@ -34,7 +34,7 @@ func main() {
 
 	fmt.Println(ctx.tree.ToString(false))
 
-	reader := bufio.NewReader(strings.NewReader("5 + 1 * -4 >= 1.1"))
+	reader := bufio.NewReader(strings.NewReader("; time to do a bit of maths \n [ my favourite number ] 5 + [ no you're a joke] 1 * -4 [inequality]>= 1.1;all done!"))
 	tokeniser := NewTokeniser(reader, ctx)
 
 	for tokeniser.currToken != EOF {
