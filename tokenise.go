@@ -122,7 +122,7 @@ func (tk *Tokeniser) skipComments() {
 
 		// remove block comments
 		if tk.currRune == START_BLOCK_COMMENT {
-			for tk.currRune != STOP_BLOCK_COMMENT {
+			for tk.currRune != STOP_BLOCK_COMMENT && tk.currRune != EOF {
 				tk.readRune()
 			}
 			tk.readRune()
