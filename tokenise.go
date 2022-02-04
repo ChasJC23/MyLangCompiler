@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"io"
+	"strconv"
 	"unicode"
 )
 
 const (
-	EOF = 0
+	EOF           = 0
+	INT_LITERAL   = 1
+	FLOAT_LITERAL = 2
 )
 
 const (
@@ -16,13 +19,16 @@ const (
 	START_BLOCK_COMMENT = '['
 	STOP_BLOCK_COMMENT  = ']'
 	NEW_LINE            = '\n'
+	RADIX               = '.'
 )
 
 type Tokeniser struct {
-	reader    *bufio.Reader
-	currRune  rune
-	currToken int
-	operators OpContext
+	reader       *bufio.Reader
+	currRune     rune
+	currToken    int
+	operators    OpContext
+	intLiteral   int64
+	floatLiteral float64
 }
 
 func (tokeniser *Tokeniser) ReadToken() {
@@ -36,20 +42,42 @@ func (tokeniser *Tokeniser) ReadToken() {
 		return
 	}
 
-	// TODO: literals
-
 	// operators
-	opSlice := make([]rune, 1, 32)
-	opSlice[0] = tokeniser.currRune
-	for tokeniser.operators.PossibleCount(opSlice) > 0 {
+	builderSlice := make([]rune, 1, 32)
+	builderSlice[0] = tokeniser.currRune
+	possibleCount := tokeniser.operators.PossibleCount(builderSlice)
+	if possibleCount > 0 {
+		for ; possibleCount > 0; possibleCount = tokeniser.operators.PossibleCount(builderSlice) {
+			tokeniser.readRune()
+			builderSlice = append(builderSlice, tokeniser.currRune)
+		}
+		token := tokeniser.operators.GetToken(builderSlice[:len(builderSlice)-1])
+		if token == -1 {
+			panic("Invalid token")
+		}
+		tokeniser.currToken = token
+		return
+	}
+
+	// numeric literals
+	if unicode.IsNumber(tokeniser.currRune) || tokeniser.currRune == RADIX {
+		hasRadix := tokeniser.currRune == RADIX
 		tokeniser.readRune()
-		opSlice = append(opSlice, tokeniser.currRune)
+		for unicode.IsNumber(tokeniser.currRune) || !hasRadix && tokeniser.currRune == RADIX {
+			builderSlice = append(builderSlice, tokeniser.currRune)
+			hasRadix = hasRadix || tokeniser.currRune == RADIX
+			tokeniser.readRune()
+		}
+		var err error
+		if hasRadix {
+			tokeniser.floatLiteral, err = strconv.ParseFloat(string(builderSlice), 64)
+		} else {
+			tokeniser.intLiteral, err = strconv.ParseInt(string(builderSlice), 0, 64)
+		}
+		if err != nil {
+			panic("poorly formatted number")
+		}
 	}
-	token := tokeniser.operators.GetToken(opSlice[:len(opSlice)-1])
-	if token == -1 {
-		panic("Invalid token")
-	}
-	tokeniser.currToken = token
 }
 
 func (tokeniser *Tokeniser) readRune() {
