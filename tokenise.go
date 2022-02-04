@@ -40,49 +40,55 @@ func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
 	return result
 }
 
-func (tokeniser *Tokeniser) ReadToken() {
+func (tk *Tokeniser) ReadToken() {
 
 	// ignore comments and surrounding whitespace if present
-	tokeniser.skipComments()
+	tk.skipComments()
 
 	// detect EOF
-	if tokeniser.currRune == '\000' {
-		tokeniser.currToken = EOF
+	if tk.currRune == '\000' {
+		tk.currToken = EOF
 		return
 	}
 
 	// operators
-	possibleCount, branchDeducedOn := tokeniser.operators.tree.PossibleCount_rune(tokeniser.currRune)
+	possibleCount, branchDeducedOn := tk.operators.tree.PossibleCount_rune(tk.currRune)
 	if possibleCount > 0 {
-		for ; possibleCount > 0; possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tokeniser.currRune) {
-			tokeniser.readRune()
+		for possibleCount > 0 {
+			tk.readRune()
+			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tk.currRune)
 		}
-		token := branchDeducedOn.operatorToken
-		if token == -1 {
+		tk.currToken = branchDeducedOn.operatorToken
+		if tk.currToken == -1 {
 			panic("Invalid token")
 		}
-		tokeniser.currToken = token
 		return
 	}
 
 	// numeric literals
-	if unicode.IsNumber(tokeniser.currRune) || tokeniser.currRune == RADIX {
+	if unicode.IsNumber(tk.currRune) || tk.currRune == RADIX {
+
+		// set up with first character
 		builderSlice := make([]rune, 1, 32)
-		builderSlice[0] = tokeniser.currRune
-		hasRadix := tokeniser.currRune == RADIX
-		tokeniser.readRune()
-		for unicode.IsNumber(tokeniser.currRune) || !hasRadix && tokeniser.currRune == RADIX {
-			builderSlice = append(builderSlice, tokeniser.currRune)
-			hasRadix = hasRadix || tokeniser.currRune == RADIX
-			tokeniser.readRune()
+		builderSlice[0] = tk.currRune
+		hasRadix := tk.currRune == RADIX
+		tk.readRune()
+
+		// add following characters
+		for unicode.IsNumber(tk.currRune) || !hasRadix && tk.currRune == RADIX {
+			builderSlice = append(builderSlice, tk.currRune)
+			hasRadix = hasRadix || tk.currRune == RADIX
+			tk.readRune()
 		}
+
+		// put things in the right places
 		var err error
 		if hasRadix {
-			tokeniser.floatLiteral, err = strconv.ParseFloat(string(builderSlice), 64)
-			tokeniser.currToken = FLOAT_LITERAL
+			tk.floatLiteral, err = strconv.ParseFloat(string(builderSlice), 64)
+			tk.currToken = FLOAT_LITERAL
 		} else {
-			tokeniser.intLiteral, err = strconv.ParseInt(string(builderSlice), 0, 64)
-			tokeniser.currToken = INT_LITERAL
+			tk.intLiteral, err = strconv.ParseInt(string(builderSlice), 0, 64)
+			tk.currToken = INT_LITERAL
 		}
 		if err != nil {
 			panic("poorly formatted number")
@@ -90,46 +96,45 @@ func (tokeniser *Tokeniser) ReadToken() {
 	}
 }
 
-func (tokeniser *Tokeniser) readRune() {
-	currentRune, _, err := tokeniser.reader.ReadRune()
+func (tk *Tokeniser) readRune() {
+	currentRune, _, err := tk.reader.ReadRune()
 	if err == io.EOF {
-		tokeniser.currRune = '\000'
+		tk.currRune = '\000'
 	} else if err == nil {
-		tokeniser.currRune = currentRune
+		tk.currRune = currentRune
 	} else {
-		// FUCK FUCK FUCK
 		panic(err)
 	}
 }
 
-func (tokeniser *Tokeniser) skipWhitespace() {
-	for unicode.IsSpace(tokeniser.currRune) {
-		tokeniser.readRune()
+func (tk *Tokeniser) skipWhitespace() {
+	for unicode.IsSpace(tk.currRune) {
+		tk.readRune()
 	}
 }
 
-func (tokeniser *Tokeniser) skipComments() {
+func (tk *Tokeniser) skipComments() {
 
-	tokeniser.skipWhitespace()
+	tk.skipWhitespace()
 
 	// while a comment exists
-	for tokeniser.currRune == START_BLOCK_COMMENT || tokeniser.currRune == LINE_COMMENT {
+	for tk.currRune == START_BLOCK_COMMENT || tk.currRune == LINE_COMMENT {
 
 		// remove block comments
-		if tokeniser.currRune == START_BLOCK_COMMENT {
-			for tokeniser.currRune != STOP_BLOCK_COMMENT {
-				tokeniser.readRune()
+		if tk.currRune == START_BLOCK_COMMENT {
+			for tk.currRune != STOP_BLOCK_COMMENT {
+				tk.readRune()
 			}
 		} else
 		// remove line comments
-		if tokeniser.currRune == LINE_COMMENT {
-			for tokeniser.currRune != NEW_LINE {
-				tokeniser.readRune()
+		if tk.currRune == LINE_COMMENT {
+			for tk.currRune != NEW_LINE {
+				tk.readRune()
 			}
 		}
 
 		// remove succeeding whitespace ready to check for more comments
 		// or start reading source code instead
-		tokeniser.skipWhitespace()
+		tk.skipWhitespace()
 	}
 }
