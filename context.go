@@ -74,16 +74,19 @@ func (tree *OperatorTree) PossibleChildCount(ra []rune) (int, *OperatorTree) {
 	}
 }
 func (tree *OperatorTree) OperatorExists(ra []rune) bool {
+	return tree.GetToken(ra) != -1
+}
+
+func (tree *OperatorTree) GetToken(ra []rune) int {
+	if len(ra) == 0 {
+		return tree.operatorToken
+	}
 	c := ra[0]
 	branch, ok := tree.branches[c]
 	if ok {
-		if len(ra) == 1 {
-			return tree.operatorToken != -1
-		} else {
-			return branch.OperatorExists(ra[1:])
-		}
+		return branch.GetToken(ra[1:])
 	}
-	return false
+	return -1
 }
 
 type OpContext struct {
@@ -102,18 +105,33 @@ func NewOpContext() *OpContext {
 
 func (ctx *OpContext) AddOperator(op []rune, precedence int) bool {
 	level := ctx.levels.Front()
+	token := ctx.opToken
 	for i := 0; i < precedence; i++ {
 		if level == nil {
 			level = ctx.levels.PushBack(NewOperatorTree())
+		} else {
+			tree := level.Value.(*OperatorTree)
+			newToken := tree.GetToken(op)
+			if newToken != -1 {
+				token = newToken
+			}
 		}
 		level = level.Next()
 	}
 	if level == nil {
 		level = ctx.levels.PushBack(NewOperatorTree())
+	} else {
+		for cp := level; cp != nil; cp = cp.Next() {
+			tree := level.Value.(*OperatorTree)
+			newToken := tree.GetToken(op)
+			if newToken != -1 {
+				token = newToken
+			}
+		}
 	}
 	tree := level.Value.(*OperatorTree)
-	success := tree.AddOperator(op, ctx.opToken)
-	if success {
+	success := tree.AddOperator(op, token)
+	if success && token == ctx.opToken {
 		ctx.opToken++
 	}
 	return success

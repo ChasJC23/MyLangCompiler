@@ -25,12 +25,12 @@ func main() {
 	// defer srcFile.Close()
 
 	ctx := NewOpContext()
-	ctx.AddOperator([]rune("++"), 0)
 	ctx.AddOperator([]rune("+"), 0)
 	ctx.AddOperator([]rune("-"), 0)
-	ctx.AddOperator([]rune("--"), 0)
-	ctx.AddOperator([]rune("*"), 0)
-	ctx.AddOperator([]rune("/"), 0)
+	ctx.AddOperator([]rune("+"), 1)
+	ctx.AddOperator([]rune("-"), 1)
+	ctx.AddOperator([]rune("*"), 2)
+	ctx.AddOperator([]rune("/"), 2)
 
 	for e := ctx.levels.Front(); e != nil; e = e.Next() {
 		tree := e.Value.(*OperatorTree)
