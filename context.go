@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"strconv"
 )
 
@@ -9,6 +8,7 @@ type OperatorTree struct {
 	branches      map[rune]*OperatorTree
 	childOpCount  int
 	operatorToken int
+	root          *OperatorTree
 }
 
 func NewOperatorTree() *OperatorTree {
@@ -42,6 +42,7 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	if !ok {
 		branch = NewOperatorTree()
 		tree.branches[c] = branch
+		branch.root = tree
 	}
 	success := branch.AddOperator(ra[1:], token)
 	if success {
@@ -90,83 +91,26 @@ func (tree *OperatorTree) GetToken(ra []rune) int {
 }
 
 type OpContext struct {
-	levels  *list.List
+	tree    *OperatorTree
 	opToken int
 }
 
 func NewOpContext() *OpContext {
-	l := list.New()
-	t := 10
 	r := new(OpContext)
-	r.levels = l
-	r.opToken = t
+	r.tree = NewOperatorTree()
+	r.opToken = 10
 	return r
 }
 
-func (ctx *OpContext) AddOperator(op []rune, precedence int) bool {
-	level := ctx.levels.Front()
+func (ctx *OpContext) AddOperator(op []rune) bool {
 	token := ctx.opToken
-	for i := 0; i < precedence; i++ {
-		if level == nil {
-			level = ctx.levels.PushBack(NewOperatorTree())
-		} else {
-			tree := level.Value.(*OperatorTree)
-			newToken := tree.GetToken(op)
-			if newToken != -1 {
-				token = newToken
-			}
-		}
-		level = level.Next()
+	newToken := ctx.tree.GetToken(op)
+	if newToken != -1 {
+		token = newToken
 	}
-	if level == nil {
-		level = ctx.levels.PushBack(NewOperatorTree())
-	} else {
-		for cp := level; cp != nil; cp = cp.Next() {
-			tree := level.Value.(*OperatorTree)
-			newToken := tree.GetToken(op)
-			if newToken != -1 {
-				token = newToken
-			}
-		}
-	}
-	tree := level.Value.(*OperatorTree)
-	success := tree.AddOperator(op, token)
+	success := ctx.tree.AddOperator(op, token)
 	if success && token == ctx.opToken {
 		ctx.opToken++
 	}
 	return success
-}
-
-func (ctx *OpContext) PossibleCount(ra []rune) int {
-	element := ctx.levels.Front()
-	tree := element.Value.(*OperatorTree)
-	total, _ := tree.PossibleCount(ra)
-	for i := 1; i < ctx.levels.Len(); i++ {
-		element = element.Next()
-		tree := element.Value.(*OperatorTree)
-		inc, _ := tree.PossibleCount(ra)
-		total += inc
-	}
-	return total
-}
-
-func (ctx *OpContext) OperatorExists(ra []rune) bool {
-	element := ctx.levels.Front()
-	tree := element.Value.(*OperatorTree)
-	exists := tree.OperatorExists(ra)
-	for !exists {
-		element = element.Next()
-		tree := element.Value.(*OperatorTree)
-		exists = exists || tree.OperatorExists(ra)
-	}
-	return exists
-}
-
-func (ctx *OpContext) GetToken(ra []rune) int {
-	token := -1
-	for element := ctx.levels.Front(); element != nil && token == -1; element = element.Next() {
-		tree := element.Value.(*OperatorTree)
-		token = tree.GetToken(ra)
-	}
-	return token
 }

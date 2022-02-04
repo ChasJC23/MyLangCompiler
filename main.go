@@ -25,17 +25,12 @@ func main() {
 	// defer srcFile.Close()
 
 	ctx := NewOpContext()
-	ctx.AddOperator([]rune("+"), 0)
-	ctx.AddOperator([]rune("-"), 0)
-	ctx.AddOperator([]rune("+"), 1)
-	ctx.AddOperator([]rune("-"), 1)
-	ctx.AddOperator([]rune("*"), 2)
-	ctx.AddOperator([]rune("/"), 2)
-
-	for e := ctx.levels.Front(); e != nil; e = e.Next() {
-		tree := e.Value.(*OperatorTree)
-		fmt.Println(tree.ToString())
+	ops := []string{"+", "-", "++", "--", "*", "/", "=", "==", "!", "!=", "+=", "-=", "*=", "/=", ">", "<", ">=", "<="}
+	for _, v := range ops {
+		ctx.AddOperator([]rune(v))
 	}
+
+	fmt.Println(ctx.tree.ToString())
 
 	// using runes
 	// srcReader := bufio.NewReader(srcFile)

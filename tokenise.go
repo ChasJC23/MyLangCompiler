@@ -45,13 +45,13 @@ func (tokeniser *Tokeniser) ReadToken() {
 	// operators
 	builderSlice := make([]rune, 1, 32)
 	builderSlice[0] = tokeniser.currRune
-	possibleCount := tokeniser.operators.PossibleCount(builderSlice)
+	possibleCount, branchDeducedOn := tokeniser.operators.tree.PossibleCount(builderSlice)
 	if possibleCount > 0 {
-		for ; possibleCount > 0; possibleCount = tokeniser.operators.PossibleCount(builderSlice) {
+		for ; possibleCount > 0; possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount(builderSlice) {
 			tokeniser.readRune()
 			builderSlice = append(builderSlice, tokeniser.currRune)
 		}
-		token := tokeniser.operators.GetToken(builderSlice[:len(builderSlice)-1])
+		token := branchDeducedOn.root.GetToken(builderSlice[:len(builderSlice)-1])
 		if token == -1 {
 			panic("Invalid token")
 		}
