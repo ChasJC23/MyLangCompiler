@@ -8,7 +8,6 @@ type OperatorTree struct {
 	branches      map[rune]*OperatorTree
 	childOpCount  int
 	operatorToken int
-	root          *OperatorTree
 }
 
 func NewOperatorTree() *OperatorTree {
@@ -20,10 +19,15 @@ func NewOperatorTree() *OperatorTree {
 	return o
 }
 
-func (tree *OperatorTree) ToString() string {
+func (tree *OperatorTree) ToString(formatrune bool) string {
 	result := "[" + strconv.FormatInt(int64(tree.operatorToken), 10) + "]{"
 	for i, v := range tree.branches {
-		result += string(i) + ":" + v.ToString() + ","
+		if formatrune {
+			result += strconv.FormatInt(int64(i), 10)
+		} else {
+			result += string(i)
+		}
+		result += ":" + v.ToString(formatrune) + ","
 	}
 	return result + "}"
 }
@@ -42,7 +46,6 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	if !ok {
 		branch = NewOperatorTree()
 		tree.branches[c] = branch
-		branch.root = tree
 	}
 	success := branch.AddOperator(ra[1:], token)
 	if success {
@@ -51,29 +54,44 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	return success
 }
 
-func (tree *OperatorTree) PossibleCount(ra []rune) (int, *OperatorTree) {
-	count, subtree := tree.PossibleChildCount(ra)
-	if subtree.operatorToken != -1 {
+func (tree *OperatorTree) PossibleCount_slice(ra []rune) (int, *OperatorTree) {
+	count, subtree := tree.PossibleChildCount_slice(ra)
+	if subtree.operatorToken != -1 && tree != subtree {
 		count++
 	}
 	return count, subtree
 }
 
-func (tree *OperatorTree) PossibleChildCount(ra []rune) (int, *OperatorTree) {
+func (tree *OperatorTree) PossibleCount_rune(r rune) (int, *OperatorTree) {
+	count, subtree := tree.PossibleChildCount_rune(r)
+	if subtree.operatorToken != -1 && tree != subtree {
+		count++
+	}
+	return count, subtree
+}
+
+func (tree *OperatorTree) PossibleChildCount_slice(ra []rune) (int, *OperatorTree) {
 	if len(ra) == 0 {
-		if tree.operatorToken != -1 {
-			return 1, tree
-		}
 		return tree.childOpCount, tree
 	}
 	c := ra[0]
 	branch, ok := tree.branches[c]
 	if ok {
-		return branch.PossibleChildCount(ra[1:])
+		return branch.PossibleChildCount_slice(ra[1:])
 	} else {
 		return 0, tree
 	}
 }
+
+func (tree *OperatorTree) PossibleChildCount_rune(r rune) (int, *OperatorTree) {
+	branch, ok := tree.branches[r]
+	if ok {
+		return branch.childOpCount, branch
+	} else {
+		return 0, tree
+	}
+}
+
 func (tree *OperatorTree) OperatorExists(ra []rune) bool {
 	return tree.GetToken(ra) != -1
 }

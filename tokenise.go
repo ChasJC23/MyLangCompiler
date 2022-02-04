@@ -26,9 +26,18 @@ type Tokeniser struct {
 	reader       *bufio.Reader
 	currRune     rune
 	currToken    int
-	operators    OpContext
+	operators    *OpContext
 	intLiteral   int64
 	floatLiteral float64
+}
+
+func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
+	result := new(Tokeniser)
+	result.reader = reader
+	result.operators = operators
+	result.readRune()
+	result.ReadToken()
+	return result
 }
 
 func (tokeniser *Tokeniser) ReadToken() {
@@ -43,15 +52,12 @@ func (tokeniser *Tokeniser) ReadToken() {
 	}
 
 	// operators
-	builderSlice := make([]rune, 1, 32)
-	builderSlice[0] = tokeniser.currRune
-	possibleCount, branchDeducedOn := tokeniser.operators.tree.PossibleCount(builderSlice)
+	possibleCount, branchDeducedOn := tokeniser.operators.tree.PossibleCount_rune(tokeniser.currRune)
 	if possibleCount > 0 {
-		for ; possibleCount > 0; possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount(builderSlice) {
+		for ; possibleCount > 0; possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tokeniser.currRune) {
 			tokeniser.readRune()
-			builderSlice = append(builderSlice, tokeniser.currRune)
 		}
-		token := branchDeducedOn.root.GetToken(builderSlice[:len(builderSlice)-1])
+		token := branchDeducedOn.operatorToken
 		if token == -1 {
 			panic("Invalid token")
 		}
@@ -61,6 +67,8 @@ func (tokeniser *Tokeniser) ReadToken() {
 
 	// numeric literals
 	if unicode.IsNumber(tokeniser.currRune) || tokeniser.currRune == RADIX {
+		builderSlice := make([]rune, 1, 32)
+		builderSlice[0] = tokeniser.currRune
 		hasRadix := tokeniser.currRune == RADIX
 		tokeniser.readRune()
 		for unicode.IsNumber(tokeniser.currRune) || !hasRadix && tokeniser.currRune == RADIX {
@@ -71,8 +79,10 @@ func (tokeniser *Tokeniser) ReadToken() {
 		var err error
 		if hasRadix {
 			tokeniser.floatLiteral, err = strconv.ParseFloat(string(builderSlice), 64)
+			tokeniser.currToken = FLOAT_LITERAL
 		} else {
 			tokeniser.intLiteral, err = strconv.ParseInt(string(builderSlice), 0, 64)
+			tokeniser.currToken = INT_LITERAL
 		}
 		if err != nil {
 			panic("poorly formatted number")
