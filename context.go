@@ -161,3 +161,12 @@ func (ctx *OpContext) OperatorExists(ra []rune) bool {
 	}
 	return exists
 }
+
+func (ctx *OpContext) GetToken(ra []rune) int {
+	token := -1
+	for element := ctx.levels.Front(); element != nil && token == -1; element = element.Next() {
+		tree := element.Value.(*OperatorTree)
+		token = tree.GetToken(ra)
+	}
+	return token
+}

@@ -39,7 +39,17 @@ func (tokeniser *Tokeniser) ReadToken() {
 	// TODO: literals
 
 	// operators
-
+	opSlice := make([]rune, 1, 32)
+	opSlice[0] = tokeniser.currRune
+	for tokeniser.operators.PossibleCount(opSlice) > 0 {
+		tokeniser.readRune()
+		opSlice = append(opSlice, tokeniser.currRune)
+	}
+	token := tokeniser.operators.GetToken(opSlice[:len(opSlice)-1])
+	if token == -1 {
+		panic("Invalid token")
+	}
+	tokeniser.currToken = token
 }
 
 func (tokeniser *Tokeniser) readRune() {
