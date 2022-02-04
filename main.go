@@ -29,8 +29,13 @@ func main() {
 	ctx.AddOperator([]rune("+"), 0)
 	ctx.AddOperator([]rune("-"), 0)
 	ctx.AddOperator([]rune("--"), 0)
+	ctx.AddOperator([]rune("*"), 0)
+	ctx.AddOperator([]rune("/"), 0)
 
-	fmt.Println(ctx.PossibleCount([]rune("")))
+	for e := ctx.levels.Front(); e != nil; e = e.Next() {
+		tree := e.Value.(*OperatorTree)
+		fmt.Println(tree.ToString())
+	}
 
 	// using runes
 	// srcReader := bufio.NewReader(srcFile)

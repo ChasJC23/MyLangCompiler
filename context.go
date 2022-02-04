@@ -1,6 +1,9 @@
 package main
 
-import "container/list"
+import (
+	"container/list"
+	"strconv"
+)
 
 type OperatorTree struct {
 	branches      map[rune]*OperatorTree
@@ -15,6 +18,14 @@ func NewOperatorTree() *OperatorTree {
 	o.childOpCount = 0
 	o.operatorToken = -1
 	return o
+}
+
+func (tree *OperatorTree) ToString() string {
+	result := "[" + strconv.FormatInt(int64(tree.operatorToken), 10) + "]{"
+	for i, v := range tree.branches {
+		result += string(i) + ":" + v.ToString() + ","
+	}
+	return result + "}"
 }
 
 func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
