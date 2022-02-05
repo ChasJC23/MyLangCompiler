@@ -2,10 +2,7 @@ package main
 
 type PrecedenceLevel uint8
 
-// might be able to use a bitmask...
-
 /*
-
 precedence level bitmask:
 
 ------00 prefix
@@ -15,5 +12,4 @@ precedence level bitmask:
 -----X-- repeatable
 ----X--- implied operation
 XXXX---- argument count - 1
-
 */

@@ -7,24 +7,6 @@ import (
 	"unicode"
 )
 
-type Token int
-
-const (
-	EOF           Token = 0
-	INT_LITERAL   Token = 1
-	FLOAT_LITERAL Token = 2
-)
-
-const (
-	PREPROCESSOR        = '#'
-	LINE_COMMENT        = ';'
-	START_BLOCK_COMMENT = '['
-	STOP_BLOCK_COMMENT  = ']'
-	NEW_LINE            = '\n'
-	RADIX               = '.'
-	EOF_RUNE            = '\000'
-)
-
 type Tokeniser struct {
 	reader       *bufio.Reader
 	currRune     rune
@@ -55,7 +37,7 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// operators
-	possibleCount, branchDeducedOn := tk.operators.tree.PossibleCount_rune(tk.currRune)
+	possibleCount, branchDeducedOn := tk.operators.opTree.PossibleCount_rune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
 			tk.readRune()

@@ -32,7 +32,7 @@ func main() {
 		ctx.AddOperator([]rune(v))
 	}
 
-	fmt.Println(ctx.tree.ToString(false))
+	fmt.Println(ctx.opTree.ToString(false))
 
 	reader := bufio.NewReader(strings.NewReader("; time to do a bit of maths \n [ my favourite number ] 5 + [ no you're a joke] 1 * -4 [inequality]>= 1.1;all done!"))
 	tokeniser := NewTokeniser(reader, ctx)
