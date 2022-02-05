@@ -2,7 +2,7 @@ package main
 
 type OpContext struct {
 	tree    *OperatorTree
-	opToken int
+	opToken Token
 }
 
 func NewOpContext() *OpContext {

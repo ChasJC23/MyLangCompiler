@@ -1,17 +1,19 @@
 package main
 
-type PrecedenceLevel struct {
-}
+type PrecedenceLevel uint8
 
 // might be able to use a bitmask...
 
 /*
 
 precedence level bitmask:
-xxxxyyyyzzzzwwww
-			ww00 prefix
-			ww01 postfix
-			ww10 infix left associative
-			ww11 infix right associative
-			w1ww repeatable
+
+------00 prefix
+------01 postfix
+------10 infix left associative
+------11 infix right associative
+-----X-- repeatable
+----X--- implied operation
+XXXX---- argument count - 1
+
 */

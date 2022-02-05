@@ -7,7 +7,7 @@ import (
 type OperatorTree struct {
 	branches      map[rune]*OperatorTree
 	childOpCount  int
-	operatorToken int
+	operatorToken Token
 }
 
 func NewOperatorTree() *OperatorTree {
@@ -32,7 +32,7 @@ func (tree *OperatorTree) ToString(formatrune bool) string {
 	return result + "}"
 }
 
-func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
+func (tree *OperatorTree) AddOperator(ra []rune, token Token) bool {
 	if len(ra) == 0 {
 		if tree.operatorToken == -1 {
 			tree.operatorToken = token
@@ -96,7 +96,7 @@ func (tree *OperatorTree) OperatorExists(ra []rune) bool {
 	return tree.GetToken(ra) != -1
 }
 
-func (tree *OperatorTree) GetToken(ra []rune) int {
+func (tree *OperatorTree) GetToken(ra []rune) Token {
 	if len(ra) == 0 {
 		return tree.operatorToken
 	}

@@ -7,10 +7,12 @@ import (
 	"unicode"
 )
 
+type Token int
+
 const (
-	EOF           = 0
-	INT_LITERAL   = 1
-	FLOAT_LITERAL = 2
+	EOF           Token = 0
+	INT_LITERAL   Token = 1
+	FLOAT_LITERAL Token = 2
 )
 
 const (
@@ -20,12 +22,13 @@ const (
 	STOP_BLOCK_COMMENT  = ']'
 	NEW_LINE            = '\n'
 	RADIX               = '.'
+	EOF_RUNE            = '\000'
 )
 
 type Tokeniser struct {
 	reader       *bufio.Reader
 	currRune     rune
-	currToken    int
+	currToken    Token
 	operators    *OpContext
 	intLiteral   int64
 	floatLiteral float64
@@ -122,14 +125,14 @@ func (tk *Tokeniser) skipComments() {
 
 		// remove block comments
 		if tk.currRune == START_BLOCK_COMMENT {
-			for tk.currRune != STOP_BLOCK_COMMENT && tk.currRune != EOF {
+			for tk.currRune != STOP_BLOCK_COMMENT && tk.currRune != EOF_RUNE {
 				tk.readRune()
 			}
 			tk.readRune()
 		} else
 		// remove line comments
 		if tk.currRune == LINE_COMMENT {
-			for tk.currRune != NEW_LINE && tk.currRune != EOF {
+			for tk.currRune != NEW_LINE && tk.currRune != EOF_RUNE {
 				tk.readRune()
 			}
 		}
