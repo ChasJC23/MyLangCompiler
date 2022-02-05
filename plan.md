@@ -7,14 +7,14 @@ All examples shown are standard operators used in mathematics or in the `C` prog
 Each and every operator is explicitly identifiable by a number of factors:
 
 - The symbol used to represent the operator
-- The priority of the operator, which defines behaviours of the operator
+- The precedence of the operator, which defines behaviours of the operator
 - The types used by the operator.
 
-Each priority level holds a set of operators with known properties, and some support operation requiring no symbol.
+Each precedence level holds a set of operators with known properties, and some support operation requiring no symbol.
 
 Therefore, the set of all available operators can be represented using a table such as:
 
-Priority | Layer type | NULL | `==` | `>` | `<` | `+` | `-` | `*` | `/` | `%`
+Precedence | Layer type | NULL | `==` | `>` | `<` | `+` | `-` | `*` | `/` | `%`
 ---|---|---|---|---|---|---|---|---|---|---
 0 | Implied Operation Weak Left Associative Infix Binary | `bool_x2 -> bool` | `any_x2 -> bool` | `numeric_x2 -> bool` | `numeric_x2 -> bool` | - | - | - | - | -
 1 | Left Associative Infix Binary | - | - | - | - | `numeric_x2 -> numeric` | `numeric_x2 -> numeric` | - | - | -
@@ -72,7 +72,7 @@ Operators making use of the prefix or postfix notation can be extended indefinit
 
 ### Prefix Flush
 
-During parsing, when encountering a prefix operator of lower priority than the most recently parsed operator, a prefix flush occurrs. This phenomenon only concerns a single term in the expression, applying the prefix operator and returning to the original priority level the parser was working at. Functionally, this means for an expression such as `2 * -x * y`, it is parsed `2 * (-x) * y`. However, as `-x` still has a lower priority, `-2 * x * y` is parsed `-(2 * x * y)`.
+During parsing, when encountering a prefix operator of lower precedence than the most recently parsed operator, a prefix flush occurrs. This phenomenon only concerns a single term in the expression, applying the prefix operator and returning to the original precedence level the parser was working at. Functionally, this means for an expression such as `2 * -x * y`, it is parsed `2 * (-x) * y`. However, as `-x` still has a lower precedence, `-2 * x * y` is parsed `-(2 * x * y)`.
 
 ### Colliding Operator Symbols
 
