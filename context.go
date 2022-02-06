@@ -7,7 +7,7 @@ type OpContext struct {
 	opTree *OperatorTree
 	// the list of all precedence levels used in a particular parsing session
 	precList *list.List
-	opToken  Token
+	opToken  int
 }
 
 func NewOpContext() *OpContext {
@@ -17,7 +17,7 @@ func NewOpContext() *OpContext {
 	return r
 }
 
-func (ctx *OpContext) AddOperator(op []rune) bool {
+func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel) bool {
 	token := ctx.opToken
 	newToken := ctx.opTree.GetToken(op)
 	if newToken != -1 {
@@ -27,5 +27,6 @@ func (ctx *OpContext) AddOperator(op []rune) bool {
 	if success && token == ctx.opToken {
 		ctx.opToken++
 	}
+	setbit(preclvl.operators, token)
 	return success
 }

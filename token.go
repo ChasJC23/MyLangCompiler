@@ -1,11 +1,9 @@
 package main
 
-type Token int
-
 const (
-	EOF           Token = -1
-	INT_LITERAL   Token = -2
-	FLOAT_LITERAL Token = -3
+	EOF           = -1
+	INT_LITERAL   = -2
+	FLOAT_LITERAL = -3
 )
 
 const (

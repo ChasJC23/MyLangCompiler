@@ -10,7 +10,7 @@ import (
 type Tokeniser struct {
 	reader       *bufio.Reader
 	currRune     rune
-	currToken    Token
+	currToken    int
 	operators    *OpContext
 	intLiteral   int64
 	floatLiteral float64
