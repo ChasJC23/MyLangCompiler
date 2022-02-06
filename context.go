@@ -1,12 +1,12 @@
 package main
 
+import "container/list"
+
 type OpContext struct {
 	// the tree used to find the token for a given operator
 	opTree *OperatorTree
-	// a slice of pointers to precedence levels each token (the index) is a member of
-	precPtrs []*PrecedenceLevel
-	// the list of precedence levels which may be manipulated at any time
-	precList *PrecedenceList
+	// the list of all precedence levels used in a particular parsing session
+	precList *list.List
 	opToken  Token
 }
 
