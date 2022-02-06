@@ -1,33 +1,31 @@
 package main
 
 import (
+	"bufio"
 	"flag"
+	"fmt"
+	"io/fs"
+	"os"
 )
 
-// var srcFilePath = flag.Arg(0)
+var srcFilePath = flag.Arg(0)
 
 func init() {
 	flag.Parse()
-	// if !fs.ValidPath(srcFilePath) {
-	// 	fmt.Println("Path does not point to a valid source file.")
-	// 	os.Exit(2)
-	// }
+	if !fs.ValidPath(srcFilePath) {
+		srcFilePath = "example.idk"
+	}
 }
 
 func main() {
-	// srcFile, err := os.Open(srcFilePath)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer srcFile.Close()
-
-	bitvec := []uint64{0, 0, 0}
-
-	setbit(bitvec, 4)
-	setbit(bitvec, 2)
-	setbit(bitvec, 2)
-	resetbit(bitvec, 2)
-
-	// using runes
-	// srcReader := bufio.NewReader(srcFile)
+	srcFile, err := os.Open(srcFilePath)
+	if err != nil {
+		panic(err)
+	}
+	reader := bufio.NewReader(srcFile)
+	var r rune
+	for r, _, err = reader.ReadRune(); err == nil; r, _, err = reader.ReadRune() {
+		fmt.Println(r)
+	}
+	defer srcFile.Close()
 }
