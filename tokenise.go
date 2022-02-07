@@ -38,7 +38,6 @@ func (tk *Tokeniser) ReadToken() {
 			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tk.currRune)
 		}
 		tk.currToken = branchDeducedOn.operatorToken
-		tk.readRune()
 		if tk.currToken == NIL_TOKEN {
 			panic("Invalid token")
 		} else
@@ -92,16 +91,20 @@ func (tk *Tokeniser) ReadToken() {
 func (tk *Tokeniser) skipUntilControl(token int) {
 	controlBit := uint16(1 << ^token)
 	buff := make([]rune, 0)
-	branch := tk.opctx.opTree
+	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true
 	for searching {
+		for branch == nil {
+			tk.readRune()
+			branch = tk.opctx.opTree.branches[tk.currRune]
+		}
 		if branch.operatorToken == token {
 			searching = false
 		} else if (branch.controlOps & controlBit) != 0 {
 			buff = append(buff, tk.currRune)
 			branch = branch.branches[tk.currRune]
 		} else {
-			branch = tk.opctx.opTree
+			branch = tk.opctx.opTree.branches[tk.currRune]
 			for len(buff) != 0 {
 				buff = buff[1:]
 				found := branch.GetToken(buff)

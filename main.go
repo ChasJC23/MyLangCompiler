@@ -23,9 +23,15 @@ func main() {
 		panic(err)
 	}
 	reader := bufio.NewReader(srcFile)
-	var r rune
-	for r, _, err = reader.ReadRune(); err == nil; r, _, err = reader.ReadRune() {
-		fmt.Println(r)
+	opc := NewOpContext()
+	opc.opTree.AddOperator([]rune(";"), COMMENT_TOKEN)
+	opc.opTree.AddOperator([]rune("<--"), OPEN_COMMENT_TOKEN)
+	opc.opTree.AddOperator([]rune("-->"), CLOSE_COMMENT_TOKEN)
+	fmt.Println(opc.opTree.ToString(true))
+	tokeniser := NewTokeniser(reader, opc)
+	for tokeniser.currToken != EOF_TOKEN {
+		fmt.Println(tokeniser.currToken)
+		tokeniser.ReadToken()
 	}
 	defer srcFile.Close()
 }

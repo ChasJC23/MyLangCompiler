@@ -1,12 +1,9 @@
-; Just using a Collatz sequence as an example file to parse.
-; This syntax is not yet finalised and may change at any time.
-x := 642789
-i := 0
-[
-    x & 1 ? [
-        x = x * 3 + 1
-        i++
-    ] : [
-        x >>= 1
-    ]
-] x /= 1 ??
+; testing skipping comments.
+<--
+The syntax for a comment could be either:
+
+- One Line (In this example started with ;)
+- Block (In this example started with <--)
+
+And both need to be parsed correctly.
+-->
