@@ -13,7 +13,9 @@ type OpContext struct {
 func NewOpContext() *OpContext {
 	r := new(OpContext)
 	r.opTree = NewOperatorTree()
-	r.opToken = 10
+	r.opToken = 0
+	r.opTree.AddOperator_rune(EOF_RUNE, EOF_TOKEN)
+	r.opTree.AddOperator_rune(NEWLINE_RUNE, NEWLINE_TOKEN)
 	return r
 }
 

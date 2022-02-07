@@ -28,15 +28,9 @@ func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
 func (tk *Tokeniser) ReadToken() {
 
 	// ignore comments and surrounding whitespace if present
-	tk.skipComments()
+	tk.skipWhitespace()
 
-	// detect EOF
-	if tk.currRune == '\000' {
-		tk.currToken = EOF
-		return
-	}
-
-	// operators
+	// operators, symbols, almost everything
 	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCount_rune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
@@ -44,8 +38,22 @@ func (tk *Tokeniser) ReadToken() {
 			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tk.currRune)
 		}
 		tk.currToken = branchDeducedOn.operatorToken
-		if tk.currToken == -1 {
+		tk.readRune()
+		if tk.currToken == NIL_TOKEN {
 			panic("Invalid token")
+		} else
+		// tokens with special meaning. Some need special care and attention.
+		if tk.currToken < NIL_TOKEN {
+			// skipping block comments
+			if tk.currToken == OPEN_COMMENT_TOKEN {
+				tk.skipUntilControl(CLOSE_COMMENT_TOKEN)
+				tk.currToken = COMMENT_TOKEN
+			} else
+			// skipping line comments
+			if tk.currToken == COMMENT_TOKEN {
+				tk.skipUntilControl(NEWLINE_TOKEN)
+				tk.currToken = COMMENT_TOKEN
+			}
 		}
 		return
 	}
@@ -81,6 +89,33 @@ func (tk *Tokeniser) ReadToken() {
 	}
 }
 
+func (tk *Tokeniser) skipUntilControl(token int) {
+	controlBit := uint16(1 << ^token)
+	buff := make([]rune, 0)
+	branch := tk.opctx.opTree
+	searching := true
+	for searching {
+		if branch.operatorToken == token {
+			searching = false
+		} else if (branch.controlOps & controlBit) != 0 {
+			buff = append(buff, tk.currRune)
+			branch = branch.branches[tk.currRune]
+		} else {
+			branch = tk.opctx.opTree
+			for len(buff) != 0 {
+				buff = buff[1:]
+				found := branch.GetToken(buff)
+				if token == found {
+					searching = false
+					break
+				}
+			}
+			buff = make([]rune, 0)
+		}
+		tk.readRune()
+	}
+}
+
 func (tk *Tokeniser) readRune() {
 	currentRune, _, err := tk.reader.ReadRune()
 	if err == io.EOF {
@@ -95,32 +130,5 @@ func (tk *Tokeniser) readRune() {
 func (tk *Tokeniser) skipWhitespace() {
 	for unicode.IsSpace(tk.currRune) {
 		tk.readRune()
-	}
-}
-
-func (tk *Tokeniser) skipComments() {
-
-	tk.skipWhitespace()
-
-	// while a comment exists
-	for tk.currRune == START_BLOCK_COMMENT || tk.currRune == LINE_COMMENT {
-
-		// remove block comments
-		if tk.currRune == START_BLOCK_COMMENT {
-			for tk.currRune != STOP_BLOCK_COMMENT && tk.currRune != EOF_RUNE {
-				tk.readRune()
-			}
-			tk.readRune()
-		} else
-		// remove line comments
-		if tk.currRune == LINE_COMMENT {
-			for tk.currRune != NEW_LINE && tk.currRune != EOF_RUNE {
-				tk.readRune()
-			}
-		}
-
-		// remove succeeding whitespace ready to check for more comments
-		// or start reading source code instead
-		tk.skipWhitespace()
 	}
 }

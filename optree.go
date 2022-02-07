@@ -5,8 +5,10 @@ import (
 )
 
 type OperatorTree struct {
-	branches      map[rune]*OperatorTree
-	childOpCount  int
+	branches     map[rune]*OperatorTree
+	childOpCount int
+	// a bitmask stating whether any special tokens exist on this branch
+	controlOps    uint16
 	operatorToken int
 }
 
@@ -15,7 +17,7 @@ func NewOperatorTree() *OperatorTree {
 	o := new(OperatorTree)
 	o.branches = m
 	o.childOpCount = 0
-	o.operatorToken = -1
+	o.operatorToken = NIL_TOKEN
 	return o
 }
 
@@ -36,6 +38,9 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	if len(ra) == 0 {
 		if tree.operatorToken == -1 {
 			tree.operatorToken = token
+			if token < 0 {
+				tree.controlOps |= 1 << ^token
+			}
 			return true
 		} else {
 			return false
@@ -50,8 +55,38 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	success := branch.AddOperator(ra[1:], token)
 	if success {
 		tree.childOpCount++
+		if token < 0 {
+			tree.controlOps |= 1 << ^token
+		}
 	}
 	return success
+}
+
+func (tree *OperatorTree) AddOperator_rune(r rune, token int) (worked bool) {
+	branch, ok := tree.branches[r]
+	if ok {
+		if branch.operatorToken == -1 {
+			branch.operatorToken = token
+			tree.childOpCount++
+			if token < 0 {
+				tree.controlOps |= 1 << ^token
+				branch.controlOps |= 1 << ^token
+			}
+			return true
+		} else {
+			return false
+		}
+	} else {
+		branch = NewOperatorTree()
+		branch.operatorToken = token
+		tree.branches[r] = branch
+		tree.childOpCount++
+		if token < 0 {
+			tree.controlOps |= 1 << ^token
+			branch.controlOps |= 1 << ^token
+		}
+		return true
+	}
 }
 
 func (tree *OperatorTree) PossibleCount(ra []rune) (int, *OperatorTree) {

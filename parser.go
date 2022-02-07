@@ -17,7 +17,7 @@ func (p *Parser) ParseSource() {
 
 	// I realise this is more of an expressions thing,
 	// but let's include it just in case.
-	if p.tokeniser.opctx.opToken != EOF {
+	if p.tokeniser.opctx.opToken != EOF_TOKEN {
 		panic("Unexpected characters at end of source file")
 	}
 }
