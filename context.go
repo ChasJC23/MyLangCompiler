@@ -30,3 +30,15 @@ func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel) bool {
 	setbit(preclvl.operators, token)
 	return success
 }
+
+func (ctx *OpContext) AddOperatorAlias(op []rune, token int) bool {
+	return ctx.opTree.AddOperator(op, token)
+}
+
+func (ctx *OpContext) RenameOperator(oldname []rune, newname []rune) {
+	oldbranch := ctx.opTree.GetBranch(oldname)
+	token := oldbranch.operatorToken
+	oldbranch.operatorToken = -1
+	newbranch := ctx.opTree.GetBranch(newname)
+	newbranch.operatorToken = token
+}

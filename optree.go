@@ -97,13 +97,22 @@ func (tree *OperatorTree) OperatorExists(ra []rune) bool {
 }
 
 func (tree *OperatorTree) GetToken(ra []rune) int {
+	branch := tree.GetBranch(ra)
+	if branch == nil {
+		return -1
+	} else {
+		return branch.operatorToken
+	}
+}
+
+func (tree *OperatorTree) GetBranch(ra []rune) *OperatorTree {
 	if len(ra) == 0 {
-		return tree.operatorToken
+		return tree
 	}
 	c := ra[0]
 	branch, ok := tree.branches[c]
 	if ok {
-		return branch.GetToken(ra[1:])
+		return branch.GetBranch(ra[1:])
 	}
-	return -1
+	return nil
 }
