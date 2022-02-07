@@ -11,7 +11,7 @@ type Tokeniser struct {
 	reader       *bufio.Reader
 	currRune     rune
 	currToken    int
-	operators    *OpContext
+	opctx        *OpContext
 	intLiteral   int64
 	floatLiteral float64
 }
@@ -19,7 +19,7 @@ type Tokeniser struct {
 func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
 	result := new(Tokeniser)
 	result.reader = reader
-	result.operators = operators
+	result.opctx = operators
 	result.readRune()
 	result.ReadToken()
 	return result
@@ -37,7 +37,7 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// operators
-	possibleCount, branchDeducedOn := tk.operators.opTree.PossibleCount_rune(tk.currRune)
+	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCount_rune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
 			tk.readRune()
