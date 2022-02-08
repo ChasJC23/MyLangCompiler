@@ -29,7 +29,7 @@ func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
 
 func (tk *Tokeniser) ReadToken() {
 
-	// ignore comments and surrounding whitespace if present
+	// ignore whitespace
 	tk.skipWhitespace()
 
 	// operators, symbols, almost everything
@@ -98,21 +98,20 @@ func (tk *Tokeniser) skipUntilControl(token int) string {
 	depth := 1
 	for searching {
 		for branch == nil {
-			builder.WriteRune(tk.currRune)
+			len, _ := builder.WriteRune(tk.currRune)
 			tk.readRune()
 			branch = tk.opctx.opTree.branches[tk.currRune]
-			depth = 1
+			depth = len
 		}
 		if branch.operatorToken == token {
 			searching = false
 		} else if (branch.controlOps & controlBit) != 0 {
-			builder.WriteRune(tk.currRune)
+			len, _ := builder.WriteRune(tk.currRune)
 			buff = append(buff, tk.currRune)
 			branch = branch.branches[tk.currRune]
-			depth++
+			depth += len
 		} else {
 			branch = tk.opctx.opTree.branches[tk.currRune]
-			depth = 1
 			for len(buff) != 0 {
 				buff = buff[1:]
 				found := branch.GetToken(buff)
@@ -121,7 +120,8 @@ func (tk *Tokeniser) skipUntilControl(token int) string {
 					break
 				}
 			}
-			builder.WriteRune(tk.currRune)
+			len, _ := builder.WriteRune(tk.currRune)
+			depth = len
 		}
 		tk.readRune()
 	}
