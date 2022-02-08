@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -14,6 +15,7 @@ type Tokeniser struct {
 	opctx        *OpContext
 	intLiteral   int64
 	floatLiteral float64
+	comment      string
 }
 
 func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
@@ -45,13 +47,12 @@ func (tk *Tokeniser) ReadToken() {
 		if tk.currToken < NIL_TOKEN {
 			// skipping block comments
 			if tk.currToken == OPEN_COMMENT_TOKEN {
-				tk.skipUntilControl(CLOSE_COMMENT_TOKEN)
+				tk.comment = tk.skipUntilControl(CLOSE_COMMENT_TOKEN)
 				tk.currToken = COMMENT_TOKEN
 			} else
 			// skipping line comments
 			if tk.currToken == COMMENT_TOKEN {
-				tk.skipUntilControl(NEWLINE_TOKEN)
-				tk.currToken = COMMENT_TOKEN
+				tk.comment = tk.skipUntilControl(NEWLINE_TOKEN)
 			}
 		}
 		return
@@ -88,19 +89,22 @@ func (tk *Tokeniser) ReadToken() {
 	}
 }
 
-func (tk *Tokeniser) skipUntilControl(token int) {
+func (tk *Tokeniser) skipUntilControl(token int) string {
 	controlBit := uint16(1 << ^token)
 	buff := make([]rune, 0)
 	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true
+	var result strings.Builder
 	for searching {
 		for branch == nil {
+			result.WriteRune(tk.currRune)
 			tk.readRune()
 			branch = tk.opctx.opTree.branches[tk.currRune]
 		}
 		if branch.operatorToken == token {
 			searching = false
 		} else if (branch.controlOps & controlBit) != 0 {
+			result.WriteRune(tk.currRune)
 			buff = append(buff, tk.currRune)
 			branch = branch.branches[tk.currRune]
 		} else {
@@ -113,10 +117,11 @@ func (tk *Tokeniser) skipUntilControl(token int) {
 					break
 				}
 			}
-			buff = make([]rune, 0)
+			result.WriteRune(tk.currRune)
 		}
 		tk.readRune()
 	}
+	return result.String()
 }
 
 func (tk *Tokeniser) readRune() {

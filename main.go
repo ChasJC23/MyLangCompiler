@@ -30,7 +30,7 @@ func main() {
 	fmt.Println(opc.opTree.ToString(true))
 	tokeniser := NewTokeniser(reader, opc)
 	for tokeniser.currToken != EOF_TOKEN {
-		fmt.Println(tokeniser.currToken)
+		fmt.Println(tokeniser.comment)
 		tokeniser.ReadToken()
 	}
 	defer srcFile.Close()
