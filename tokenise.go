@@ -94,21 +94,25 @@ func (tk *Tokeniser) skipUntilControl(token int) string {
 	buff := make([]rune, 0)
 	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true
-	var result strings.Builder
+	var builder strings.Builder
+	depth := 1
 	for searching {
 		for branch == nil {
-			result.WriteRune(tk.currRune)
+			builder.WriteRune(tk.currRune)
 			tk.readRune()
 			branch = tk.opctx.opTree.branches[tk.currRune]
+			depth = 1
 		}
 		if branch.operatorToken == token {
 			searching = false
 		} else if (branch.controlOps & controlBit) != 0 {
-			result.WriteRune(tk.currRune)
+			builder.WriteRune(tk.currRune)
 			buff = append(buff, tk.currRune)
 			branch = branch.branches[tk.currRune]
+			depth++
 		} else {
 			branch = tk.opctx.opTree.branches[tk.currRune]
+			depth = 1
 			for len(buff) != 0 {
 				buff = buff[1:]
 				found := branch.GetToken(buff)
@@ -117,11 +121,12 @@ func (tk *Tokeniser) skipUntilControl(token int) string {
 					break
 				}
 			}
-			result.WriteRune(tk.currRune)
+			builder.WriteRune(tk.currRune)
 		}
 		tk.readRune()
 	}
-	return result.String()
+	result := builder.String()
+	return result[:len(result)-depth]
 }
 
 func (tk *Tokeniser) readRune() {
