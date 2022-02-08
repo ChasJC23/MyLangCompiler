@@ -38,7 +38,7 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	if len(ra) == 0 {
 		if tree.operatorToken == NIL_TOKEN {
 			tree.operatorToken = token
-			if token < 0 {
+			if token < NIL_TOKEN {
 				tree.controlOps |= 1 << ^token
 			}
 			return true
@@ -55,7 +55,7 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 	success := branch.AddOperator(ra[1:], token)
 	if success {
 		tree.childOpCount++
-		if token < 0 {
+		if token < NIL_TOKEN {
 			tree.controlOps |= 1 << ^token
 		}
 	}
@@ -68,7 +68,7 @@ func (tree *OperatorTree) AddOperator_rune(r rune, token int) (worked bool) {
 		if branch.operatorToken == NIL_TOKEN {
 			branch.operatorToken = token
 			tree.childOpCount++
-			if token < 0 {
+			if token < NIL_TOKEN {
 				tree.controlOps |= 1 << ^token
 				branch.controlOps |= 1 << ^token
 			}
@@ -81,7 +81,7 @@ func (tree *OperatorTree) AddOperator_rune(r rune, token int) (worked bool) {
 		branch.operatorToken = token
 		tree.branches[r] = branch
 		tree.childOpCount++
-		if token < 0 {
+		if token < NIL_TOKEN {
 			tree.controlOps |= 1 << ^token
 			branch.controlOps |= 1 << ^token
 		}

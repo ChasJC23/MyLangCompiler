@@ -19,7 +19,7 @@ func NewOpContext() *OpContext {
 	return r
 }
 
-func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel) bool {
+func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel, properties *OpProp) bool {
 	token := ctx.opToken
 	newToken := ctx.opTree.GetToken(op)
 	if newToken != NIL_TOKEN {
@@ -29,7 +29,7 @@ func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel) bool {
 	if success && token == ctx.opToken {
 		ctx.opToken++
 	}
-	setbit(preclvl.operators, token)
+	preclvl.operators[token] = properties
 	return success
 }
 
