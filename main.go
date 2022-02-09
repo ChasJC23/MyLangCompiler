@@ -27,7 +27,7 @@ func main() {
 	opc.opTree.AddOperator([]rune(";"), COMMENT_TOKEN)
 	opc.opTree.AddOperator([]rune("<--"), OPEN_COMMENT_TOKEN)
 	opc.opTree.AddOperator([]rune("-->"), CLOSE_COMMENT_TOKEN)
-	fmt.Println(opc.opTree.ToString(true))
+	fmt.Println(opc.opTree.String(true))
 	tokeniser := NewTokeniser(reader, opc)
 	for tokeniser.currToken != EOF_TOKEN {
 		fmt.Println(tokeniser.comment)

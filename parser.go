@@ -15,7 +15,7 @@ func NewParser(tokeniser *Tokeniser) *Parser {
 }
 
 // function responsible for parsing an entire source file
-func (p *Parser) ParseSource() interface{} {
+func (p *Parser) ParseSource() AST {
 
 	result := p.ParseCodeBlock()
 
@@ -29,23 +29,23 @@ func (p *Parser) ParseSource() interface{} {
 }
 
 // function responsible for parsing a specific code block
-func (p *Parser) ParseCodeBlock() interface{} {
-	statements := make([]interface{}, 0)
+func (p *Parser) ParseCodeBlock() AST {
+	statements := make([]AST, 0)
 	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK {
 		statements = append(statements, p.ParseStatement())
 	}
-	return statements
+	return NewCodeBlock(statements)
 }
 
 // function responsible for parsing any arbitrary statement.
 // This may be any individual line of code.
-func (p *Parser) ParseStatement() interface{} {
+func (p *Parser) ParseStatement() AST {
 	preclvlel := p.opctx.precList.Front()
-	result := p.ParsePrecisionLevel(preclvlel)
+	result := p.ParsePrecedenceLevel(preclvlel)
 	return result
 }
 
-func (p *Parser) ParsePrecisionLevel(preclvlel *list.Element) interface{} {
+func (p *Parser) ParsePrecedenceLevel(preclvlel *list.Element) AST {
 	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
 	if err {
 		return p.ParseLeaf()
@@ -81,16 +81,16 @@ func (p *Parser) ParsePrecisionLevel(preclvlel *list.Element) interface{} {
 	}
 }
 
-func (p *Parser) ParseImpliedLeftAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseImpliedRepeatableLeftAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseImpliedRightAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseImpliedRepeatableRightAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseLeftAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseRepeatableLeftAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseRightAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseRepeatableRightAssociative(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel) interface{}
-func (p *Parser) ParseLeaf() interface{}
+func (p *Parser) ParseImpliedLeftAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseImpliedRepeatableLeftAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseImpliedRightAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseImpliedRepeatableRightAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseLeftAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseRepeatableLeftAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseRightAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseRepeatableRightAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseLeaf() AST

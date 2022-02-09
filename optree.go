@@ -21,7 +21,7 @@ func NewOperatorTree() *OperatorTree {
 	return o
 }
 
-func (tree *OperatorTree) ToString(formatrune bool) string {
+func (tree *OperatorTree) String(formatrune bool) string {
 	result := "[" + strconv.FormatInt(int64(tree.operatorToken), 10) + "]{"
 	for i, v := range tree.branches {
 		if formatrune {
@@ -29,7 +29,7 @@ func (tree *OperatorTree) ToString(formatrune bool) string {
 		} else {
 			result += string(i)
 		}
-		result += ":" + v.ToString(formatrune) + ","
+		result += ":" + v.String(formatrune) + ","
 	}
 	return result + "}"
 }
