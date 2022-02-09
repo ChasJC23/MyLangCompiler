@@ -50,44 +50,43 @@ func (p *Parser) ParsePrecisionLevel(preclvlel *list.Element) interface{} {
 	// check bitmask in preclevel.go
 	switch preclvl.properties & 0b1111 {
 	case 0b0000: // prefix
-		p.ParsePrefix(preclvl)
+		return p.ParsePrefix(preclvl)
 	case 0b0001: // postfix
-		p.ParsePostfix(preclvl)
+		return p.ParsePostfix(preclvl)
 	case 0b0010: // infix left associative
-		p.ParseLeftAssociative(preclvl)
+		return p.ParseLeftAssociative(preclvl)
 	case 0b0011: // infix right associative
-		p.ParseRightAssociative(preclvl)
+		return p.ParseRightAssociative(preclvl)
 	case 0b0100: // repeatable prefix
-		p.ParseRepeatablePrefix(preclvl)
+		return p.ParseRepeatablePrefix(preclvl)
 	case 0b0101: // repeatable postfix
-		p.ParseRepeatablePostfix(preclvl)
+		return p.ParseRepeatablePostfix(preclvl)
 	case 0b0110: // repeatable infix left associative
-		p.ParseRepeatableLeftAssociative(preclvl)
+		return p.ParseRepeatableLeftAssociative(preclvl)
 	case 0b0111: // repeatable infix right associative
-		p.ParseRepeatableRightAssociative(preclvl)
+		return p.ParseRepeatableRightAssociative(preclvl)
 	case 0b1010: // implied operation infix left associative
-		p.ParseImpliedLeftAssociative(preclvl)
+		return p.ParseImpliedLeftAssociative(preclvl)
 	case 0b1011: // implied operation infix right associative
-		p.ParseImpliedRightAssociative(preclvl)
+		return p.ParseImpliedRightAssociative(preclvl)
 	case 0b1110: // implied operation repeatable infix left associative
-		p.ParseImpliedRepeatableLeftAssociative(preclvl)
+		return p.ParseImpliedRepeatableLeftAssociative(preclvl)
 	case 0b1111: // implied operation repeatable infix right associative
-		p.ParseImpliedRepeatableRightAssociative(preclvl)
+		return p.ParseImpliedRepeatableRightAssociative(preclvl)
 	default:
 		panic("invalid configuration")
 	}
-	return nil
 }
 
-func (p *Parser) ParseImpliedLeftAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseImpliedRepeatableLeftAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseImpliedRightAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseImpliedRepeatableRightAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseLeftAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseRepeatableLeftAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseRightAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParseRepeatableRightAssociative(preclvl *PrecedenceLevel)
-func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel)
-func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel)
-func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel)
-func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel)
+func (p *Parser) ParseImpliedLeftAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseImpliedRepeatableLeftAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseImpliedRightAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseImpliedRepeatableRightAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseLeftAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseRepeatableLeftAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseRightAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseRepeatableRightAssociative(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel) interface{}
