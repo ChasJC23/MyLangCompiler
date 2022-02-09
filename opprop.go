@@ -1,4 +1,6 @@
 package main
 
-type OpProp interface {
+type OpProp struct {
+	subsequentSymbols  []int
+	codeBlockArguments int
 }
