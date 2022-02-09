@@ -46,7 +46,10 @@ func (p *Parser) ParseStatement() interface{} {
 }
 
 func (p *Parser) ParsePrecisionLevel(preclvlel *list.Element) interface{} {
-	preclvl := preclvlel.Value.(*PrecedenceLevel)
+	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
+	if err {
+		return p.ParseLeaf()
+	}
 	// check bitmask in preclevel.go
 	switch preclvl.properties & 0b1111 {
 	case 0b0000: // prefix
@@ -90,3 +93,4 @@ func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel) interface{}
 func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel) interface{}
 func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) interface{}
 func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel) interface{}
+func (p *Parser) ParseLeaf() interface{}
