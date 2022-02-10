@@ -51,48 +51,65 @@ func (p *Parser) ParsePrecedenceLevel(preclvlel *list.Element) AST {
 		return p.ParseLeaf()
 	}
 	// check bitmask in preclevel.go
-	switch preclvl.properties & 0b1111 {
-	case 0b0000: // prefix
-		return p.ParsePrefix(preclvl)
-	case 0b0001: // postfix
+	switch preclvl.properties & 0b111 {
+	case 0b000: // prefix
+		return p.ParsePrefix(preclvlel)
+	case 0b001: // postfix
 		return p.ParsePostfix(preclvl)
-	case 0b0010: // infix left associative
+	case 0b010: // infix left associative
 		return p.ParseLeftAssociative(preclvl)
-	case 0b0011: // infix right associative
+	case 0b011: // infix right associative
 		return p.ParseRightAssociative(preclvl)
-	case 0b0100: // repeatable prefix
-		return p.ParseRepeatablePrefix(preclvl)
-	case 0b0101: // repeatable postfix
-		return p.ParseRepeatablePostfix(preclvl)
-	case 0b0110: // repeatable infix left associative
-		return p.ParseRepeatableLeftAssociative(preclvl)
-	case 0b0111: // repeatable infix right associative
-		return p.ParseRepeatableRightAssociative(preclvl)
-	case 0b1010: // implied operation infix left associative
+	case 0b110: // implied operation infix left associative
 		return p.ParseImpliedLeftAssociative(preclvl)
-	case 0b1011: // implied operation infix right associative
+	case 0b111: // implied operation infix right associative
 		return p.ParseImpliedRightAssociative(preclvl)
-	case 0b1110: // implied operation repeatable infix left associative
-		return p.ParseImpliedRepeatableLeftAssociative(preclvl)
-	case 0b1111: // implied operation repeatable infix right associative
-		return p.ParseImpliedRepeatableRightAssociative(preclvl)
 	default:
 		panic("invalid configuration")
 	}
 }
 
 func (p *Parser) ParseImpliedLeftAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseImpliedRepeatableLeftAssociative(preclvl *PrecedenceLevel) AST
 func (p *Parser) ParseImpliedRightAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseImpliedRepeatableRightAssociative(preclvl *PrecedenceLevel) AST
 func (p *Parser) ParseLeftAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseRepeatableLeftAssociative(preclvl *PrecedenceLevel) AST
 func (p *Parser) ParseRightAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseRepeatableRightAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel) AST
+
+func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
+	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
+	if err {
+		return p.ParseLeaf()
+	}
+	opProperties := preclvl.operators[p.tokeniser.currToken]
+	argumentCount := int(preclvl.properties>>4) + 1
+	if opProperties == nil {
+		return p.ParsePrecedenceLevel(preclvlel.Next())
+	}
+	argumentSlice := make([]AST, argumentCount)
+	// uh... that works I guess
+	for argumentIndex, bit := 0, 1; argumentIndex < argumentCount; argumentIndex, bit = argumentIndex+1, bit<<1 {
+		p.tokeniser.ReadToken()
+		isCodeBlock := opProperties.codeBlockArguments&bit != 0
+		var argument AST
+		if isCodeBlock {
+			if p.tokeniser.currToken == OPEN_CODE_BLOCK {
+				p.tokeniser.ReadToken()
+				argument = p.ParseCodeBlock()
+				if p.tokeniser.currToken != CLOSE_CODE_BLOCK {
+					panic("missing close code block symbol")
+				}
+				p.tokeniser.ReadToken()
+			} else {
+				argument = p.ParseStatement()
+			}
+		} else {
+			argument = p.ParsePrecedenceLevel(preclvlel)
+		}
+		argumentSlice[argumentIndex] = argument
+	}
+	return NewStatement(argumentSlice, opProperties)
+}
+
 func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel) AST
 
 func (p *Parser) ParseLeaf() AST {
 	var result AST

@@ -13,7 +13,6 @@ precedence level bitmask:
 ------01 postfix
 ------10 infix left associative
 ------11 infix right associative
------X-- repeatable
-----X--- implied operation
-XXXX---- argument count - 1
+-----X-- implied operation
+XXXXX--- argument count - 1
 */

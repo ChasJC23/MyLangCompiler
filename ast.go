@@ -29,3 +29,10 @@ func NewCodeBlock(lines []AST) *CodeBlock {
 	result.lines = lines
 	return result
 }
+
+func NewStatement(terms []AST, properties *OpProp) *Statement {
+	result := new(Statement)
+	result.terms = terms
+	result.properties = properties
+	return result
+}
