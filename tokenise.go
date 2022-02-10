@@ -63,14 +63,14 @@ func (tk *Tokeniser) ReadToken() {
 	if unicode.IsNumber(tk.currRune) || tk.currRune == RADIX {
 
 		// set up with first character
-		var builderSlice strings.Builder
-		builderSlice.WriteRune(tk.currRune)
+		var litBuilder strings.Builder
+		litBuilder.WriteRune(tk.currRune)
 		hasRadix := tk.currRune == RADIX
 		tk.readRune()
 
 		// add following characters
 		for unicode.IsNumber(tk.currRune) || !hasRadix && tk.currRune == RADIX {
-			builderSlice.WriteRune(tk.currRune)
+			litBuilder.WriteRune(tk.currRune)
 			hasRadix = hasRadix || tk.currRune == RADIX
 			tk.readRune()
 		}
@@ -78,10 +78,10 @@ func (tk *Tokeniser) ReadToken() {
 		// put things in the right places
 		var err error
 		if hasRadix {
-			tk.floatLiteral, err = strconv.ParseFloat(builderSlice.String(), 64)
+			tk.floatLiteral, err = strconv.ParseFloat(litBuilder.String(), 64)
 			tk.currToken = FLOAT_LITERAL
 		} else {
-			tk.intLiteral, err = strconv.ParseInt(builderSlice.String(), 0, 64)
+			tk.intLiteral, err = strconv.ParseInt(litBuilder.String(), 0, 64)
 			tk.currToken = INT_LITERAL
 		}
 		if err != nil {
@@ -91,7 +91,12 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// anything else has to be an identifier
-
+	var idenBuilder strings.Builder
+	for !unicode.IsSpace(tk.currRune) {
+		idenBuilder.WriteRune(tk.currRune)
+	}
+	tk.currToken = IDENTIFIER_TOKEN
+	tk.identifier = idenBuilder.String()
 }
 
 func (tk *Tokeniser) skipUntilControl(token int) string {
