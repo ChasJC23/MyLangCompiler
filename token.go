@@ -14,6 +14,7 @@ const (
 	CLOSE_COMMENT_TOKEN = -9
 	COMMENT_TOKEN       = -10
 	NEWLINE_TOKEN       = -11
+	IDENTIFIER_TOKEN    = -12
 )
 
 const (

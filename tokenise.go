@@ -16,6 +16,7 @@ type Tokeniser struct {
 	intLiteral   int64
 	floatLiteral float64
 	comment      string
+	identifier   string
 }
 
 func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
@@ -32,7 +33,7 @@ func (tk *Tokeniser) ReadToken() {
 	// ignore whitespace
 	tk.skipWhitespace()
 
-	// operators, symbols, almost everything
+	// operators, symbols, etc.
 	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCount_rune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
@@ -62,14 +63,14 @@ func (tk *Tokeniser) ReadToken() {
 	if unicode.IsNumber(tk.currRune) || tk.currRune == RADIX {
 
 		// set up with first character
-		builderSlice := make([]rune, 1, 32)
-		builderSlice[0] = tk.currRune
+		var builderSlice strings.Builder
+		builderSlice.WriteRune(tk.currRune)
 		hasRadix := tk.currRune == RADIX
 		tk.readRune()
 
 		// add following characters
 		for unicode.IsNumber(tk.currRune) || !hasRadix && tk.currRune == RADIX {
-			builderSlice = append(builderSlice, tk.currRune)
+			builderSlice.WriteRune(tk.currRune)
 			hasRadix = hasRadix || tk.currRune == RADIX
 			tk.readRune()
 		}
@@ -77,16 +78,20 @@ func (tk *Tokeniser) ReadToken() {
 		// put things in the right places
 		var err error
 		if hasRadix {
-			tk.floatLiteral, err = strconv.ParseFloat(string(builderSlice), 64)
+			tk.floatLiteral, err = strconv.ParseFloat(builderSlice.String(), 64)
 			tk.currToken = FLOAT_LITERAL
 		} else {
-			tk.intLiteral, err = strconv.ParseInt(string(builderSlice), 0, 64)
+			tk.intLiteral, err = strconv.ParseInt(builderSlice.String(), 0, 64)
 			tk.currToken = INT_LITERAL
 		}
 		if err != nil {
 			panic("poorly formatted number")
 		}
+		return
 	}
+
+	// anything else has to be an identifier
+
 }
 
 func (tk *Tokeniser) skipUntilControl(token int) string {
