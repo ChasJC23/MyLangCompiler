@@ -8,7 +8,7 @@ type OperatorTree struct {
 	branches     map[rune]*OperatorTree
 	childOpCount int
 	// a bitmask stating whether any special tokens exist on this branch
-	controlOps    uint16
+	controlOps    uint32
 	operatorToken int
 }
 

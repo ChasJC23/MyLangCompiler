@@ -102,7 +102,7 @@ func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 				argument = p.ParseStatement()
 			}
 		} else {
-			argument = p.ParsePrecedenceLevel(preclvlel)
+			argument = p.ParsePrefix(preclvlel)
 		}
 		argumentSlice[argumentIndex] = argument
 	}
@@ -118,12 +118,18 @@ func (p *Parser) ParseLeaf() AST {
 		result = IntLiteral{p.tokeniser.intLiteral}
 	case FLOAT_LITERAL:
 		result = FloatLiteral{p.tokeniser.floatLiteral}
+	case CHAR_LITERAL:
+		result = CharLiteral{p.tokeniser.charLiteral}
+	case STRING_LITERAL:
+		result = StringLiteral{p.tokeniser.stringLiteral}
 	case OPEN_PARENS:
 		p.tokeniser.ReadToken()
 		result = p.ParseStatement()
 		if p.tokeniser.currToken != CLOSE_PARENS {
 			panic("missing parentheses")
 		}
+	case IDENTIFIER_TOKEN:
+		result = Identifier{p.tokeniser.identifier}
 	}
 	p.tokeniser.ReadToken()
 	return result

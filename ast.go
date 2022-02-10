@@ -24,6 +24,14 @@ type FloatLiteral struct {
 	value float64
 }
 
+type CharLiteral struct {
+	value rune
+}
+
+type StringLiteral struct {
+	value string
+}
+
 func NewCodeBlock(lines []AST) *CodeBlock {
 	result := new(CodeBlock)
 	result.lines = lines

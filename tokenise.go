@@ -9,14 +9,16 @@ import (
 )
 
 type Tokeniser struct {
-	reader       *bufio.Reader
-	currRune     rune
-	currToken    int
-	opctx        *OpContext
-	intLiteral   int64
-	floatLiteral float64
-	comment      string
-	identifier   string
+	reader        *bufio.Reader
+	currRune      rune
+	currToken     int
+	opctx         *OpContext
+	intLiteral    int64
+	floatLiteral  float64
+	charLiteral   rune
+	stringLiteral string
+	comment       string
+	identifier    string
 }
 
 func NewTokeniser(reader *bufio.Reader, operators *OpContext) *Tokeniser {
@@ -54,6 +56,19 @@ func (tk *Tokeniser) ReadToken() {
 			// skipping line comments
 			if tk.currToken == COMMENT_TOKEN {
 				tk.comment = tk.skipUntilControl(NEWLINE_TOKEN)
+			} else
+			// parsing characters
+			if tk.currToken == OPEN_CHAR_LITERAL {
+				// TODO: escaped code points? In any case, a character isn't always represented by itself in code
+				// (plus this could be improved anyways)
+				charContent := tk.skipUntilControl(CLOSE_CHAR_LITERAL)
+				tk.charLiteral = []rune(charContent)[0]
+				tk.currToken = CHAR_LITERAL
+			} else
+			// parsing strings
+			if tk.currToken == OPEN_STRING_LITERAL {
+				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_LITERAL)
+				tk.currToken = STRING_LITERAL
 			}
 		}
 		return
@@ -100,7 +115,7 @@ func (tk *Tokeniser) ReadToken() {
 }
 
 func (tk *Tokeniser) skipUntilControl(token int) string {
-	controlBit := uint16(1 << ^token)
+	controlBit := uint32(1 << ^token)
 	buff := make([]rune, 0)
 	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true
