@@ -93,4 +93,21 @@ func (p *Parser) ParsePrefix(preclvl *PrecedenceLevel) AST
 func (p *Parser) ParseRepeatablePrefix(preclvl *PrecedenceLevel) AST
 func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) AST
 func (p *Parser) ParseRepeatablePostfix(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseLeaf() AST
+
+func (p *Parser) ParseLeaf() AST {
+	var result AST
+	switch p.tokeniser.currToken {
+	case INT_LITERAL:
+		result = IntLiteral{p.tokeniser.intLiteral}
+	case FLOAT_LITERAL:
+		result = FloatLiteral{p.tokeniser.floatLiteral}
+	case OPEN_PARENS:
+		p.tokeniser.ReadToken()
+		result = p.ParseStatement()
+		if p.tokeniser.currToken != CLOSE_PARENS {
+			panic("missing parentheses")
+		}
+	}
+	p.tokeniser.ReadToken()
+	return result
+}

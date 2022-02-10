@@ -8,7 +8,8 @@ type CodeBlock struct {
 }
 
 type Statement struct {
-	terms []AST
+	terms      []AST
+	properties *OpProp
 }
 
 type Identifier struct {
@@ -16,7 +17,11 @@ type Identifier struct {
 }
 
 type IntLiteral struct {
-	value int
+	value int64
+}
+
+type FloatLiteral struct {
+	value float64
 }
 
 func NewCodeBlock(lines []AST) *CodeBlock {
