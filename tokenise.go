@@ -115,7 +115,7 @@ func (tk *Tokeniser) ReadToken() {
 }
 
 func (tk *Tokeniser) skipUntilControl(token int) string {
-	controlBit := uint32(1 << ^token)
+	controlBit := uint(1 << ^token)
 	buff := make([]rune, 0)
 	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true

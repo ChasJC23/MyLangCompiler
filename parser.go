@@ -86,7 +86,7 @@ func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 	}
 	argumentSlice := make([]AST, argumentCount)
 	// uh... that works I guess
-	for argumentIndex, bit := 0, 1; argumentIndex < argumentCount; argumentIndex, bit = argumentIndex+1, bit<<1 {
+	for argumentIndex, bit := 0, uint(1); argumentIndex < argumentCount; argumentIndex, bit = argumentIndex+1, bit<<1 {
 		p.tokeniser.ReadToken()
 		isCodeBlock := opProperties.codeBlockArguments&bit != 0
 		var argument AST
