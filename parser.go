@@ -81,8 +81,15 @@ func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 	lhs := p.ParsePrecedenceLevel(preclvlel.Next())
 	for {
 		opProperties := preclvl.operators[p.tokeniser.currToken]
+
+		// if this operator isn't defined:
 		if opProperties == nil {
+
+			// we need to check if an implied operation exists for this precedence level
 			nilOpProp := preclvl.operators[NIL_TOKEN]
+
+			// we know the next symbol isn't in this precedence level,
+			// but still check if it's a control token in case of higher precedence operators.
 			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN {
 				return lhs
 			} else {
@@ -97,7 +104,28 @@ func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 	}
 }
 
-func (p *Parser) ParseRightAssociative(preclvl *list.Element) AST
+func (p *Parser) ParseRightAssociative(preclvlel *list.Element) AST {
+	preclvl, err := preclvlel.Value.(PrecedenceLevel)
+	if err {
+		return p.ParseLeaf()
+	}
+	lhs := p.ParsePrecedenceLevel(preclvlel.Next())
+	opProperties := preclvl.operators[p.tokeniser.currToken]
+	// same logic as left associative, just a bit of recursion to get the associativity right
+	if opProperties == nil {
+		nilOpProp := preclvl.operators[NIL_TOKEN]
+		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN {
+			return lhs
+		} else {
+			opProperties = nilOpProp
+		}
+	} else {
+		p.tokeniser.ReadToken()
+	}
+	rhs := p.ParseRightAssociative(preclvlel)
+
+	return NewStatement([]AST{lhs, rhs}, opProperties)
+}
 
 func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
