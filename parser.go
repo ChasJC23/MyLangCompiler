@@ -55,7 +55,7 @@ func (p *Parser) ParsePrecedenceLevel(preclvlel *list.Element) AST {
 	case 0b000: // prefix
 		return p.ParsePrefix(preclvlel)
 	case 0b001: // postfix
-		return p.ParsePostfix(preclvl)
+		return p.ParsePostfix(preclvlel)
 	case 0b010: // infix left associative
 		return p.ParseLeftAssociative(preclvl)
 	case 0b011: // infix right associative
@@ -80,10 +80,10 @@ func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 		return p.ParseLeaf()
 	}
 	opProperties := preclvl.operators[p.tokeniser.currToken]
-	argumentCount := int(preclvl.properties>>4) + 1
 	if opProperties == nil {
 		return p.ParsePrecedenceLevel(preclvlel.Next())
 	}
+	argumentCount := opProperties.argumentCount
 	argumentSlice := make([]AST, argumentCount)
 	// uh... that works I guess
 	for argumentIndex, bit := 0, uint(1); argumentIndex < argumentCount; argumentIndex, bit = argumentIndex+1, bit<<1 {
@@ -109,7 +109,33 @@ func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 	return NewStatement(argumentSlice, opProperties)
 }
 
-func (p *Parser) ParsePostfix(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParsePostfix(preclvlel *list.Element) AST {
+	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
+	if err {
+		return p.ParseLeaf()
+	}
+	// stack based parsing
+	stack := make(ASTStack, 0)
+
+	// The stack should be the deciding factor for when we complete this precedence level
+	for len(stack) != 1 {
+		opProperties := preclvl.operators[p.tokeniser.currToken]
+		// for symbols we don't recognise here, pass onto higher precedence parsing and add to the stack
+		if opProperties == nil {
+			stack.Push(p.ParsePrecedenceLevel(preclvlel.Next()))
+		} else
+		// for symbols we do recognise, replace top few elements of the stack with the parsed result
+		{
+			argCount := opProperties.argumentCount
+			argumentSlice := make([]AST, argCount)
+			for i := argCount - 1; i >= 0; i++ {
+				argumentSlice[i] = stack.Pop()
+			}
+			stack.Push(NewStatement(argumentSlice, opProperties))
+		}
+	}
+	return stack[0]
+}
 
 func (p *Parser) ParseLeaf() AST {
 	var result AST

@@ -14,5 +14,4 @@ precedence level bitmask:
 ------10 infix left associative
 ------11 infix right associative
 -----X-- implied operation
-XXXXX--- argument count - 1
 */
