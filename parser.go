@@ -133,6 +133,7 @@ func (p *Parser) ParsePostfix(preclvlel *list.Element) AST {
 			}
 			stack.Push(NewStatement(argumentSlice, opProperties))
 		}
+		p.tokeniser.ReadToken()
 	}
 	return stack[0]
 }
