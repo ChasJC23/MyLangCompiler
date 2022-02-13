@@ -57,22 +57,25 @@ func (p *Parser) ParsePrecedenceLevel(preclvlel *list.Element) AST {
 	case 0b001: // postfix
 		return p.ParsePostfix(preclvlel)
 	case 0b010: // infix left associative
-		return p.ParseLeftAssociative(preclvl)
+		return p.ParseLeftAssociative(preclvlel)
 	case 0b011: // infix right associative
-		return p.ParseRightAssociative(preclvl)
+		return p.ParseRightAssociative(preclvlel)
 	case 0b110: // implied operation infix left associative
-		return p.ParseImpliedLeftAssociative(preclvl)
+		return p.ParseImpliedLeftAssociative(preclvlel)
 	case 0b111: // implied operation infix right associative
-		return p.ParseImpliedRightAssociative(preclvl)
+		return p.ParseImpliedRightAssociative(preclvlel)
 	default:
 		panic("invalid configuration")
 	}
 }
 
-func (p *Parser) ParseImpliedLeftAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseImpliedRightAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseLeftAssociative(preclvl *PrecedenceLevel) AST
-func (p *Parser) ParseRightAssociative(preclvl *PrecedenceLevel) AST
+func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST
+
+func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST
+
+func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST
+
+func (p *Parser) ParseRightAssociative(preclvl *list.Element) AST
 
 func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
