@@ -98,9 +98,24 @@ func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 		} else {
 			p.tokeniser.ReadToken()
 		}
-		rhs := p.ParsePrecedenceLevel(preclvlel.Next())
 
-		lhs = NewStatement([]AST{lhs, rhs}, opProperties)
+		// we've parsed the first argument, now we use the operator properties to deduce subsequent symbols to expect
+		args := make([]AST, 2)
+		args[0] = lhs
+		args[1] = p.ParsePrecedenceLevel(preclvlel.Next())
+		for i := 0; i < len(opProperties.subsequentSymbols); i++ {
+			nextSymbol := opProperties.subsequentSymbols[i]
+			if p.tokeniser.currToken == nextSymbol || p.tokeniser.currToken < NIL_TOKEN && nextSymbol == NIL_TOKEN {
+				if nextSymbol != NIL_TOKEN {
+					p.tokeniser.ReadToken()
+				}
+				args = append(args, p.ParsePrecedenceLevel(preclvlel.Next()))
+			} else {
+				panic("Unexpected symbol")
+			}
+		}
+
+		lhs = NewStatement(args, opProperties)
 	}
 }
 
