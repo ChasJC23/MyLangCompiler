@@ -100,7 +100,7 @@ func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 		}
 
 		// we've parsed the first argument, now we use the operator properties to deduce subsequent symbols to expect
-		args := make([]AST, 2)
+		args := make([]AST, 2, len(opProperties.subsequentSymbols)+1)
 		args[0] = lhs
 		args[1] = p.ParsePrecedenceLevel(preclvlel.Next())
 		for i := 0; i < len(opProperties.subsequentSymbols); i++ {
@@ -127,6 +127,7 @@ func (p *Parser) ParseRightAssociative(preclvlel *list.Element) AST {
 	lhs := p.ParsePrecedenceLevel(preclvlel.Next())
 	opProperties := preclvl.operators[p.tokeniser.currToken]
 	// same logic as left associative, just a bit of recursion to get the associativity right
+	// private function might be useful, quite a lot of redundancy here
 	if opProperties == nil {
 		nilOpProp := preclvl.operators[NIL_TOKEN]
 		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN {
@@ -137,9 +138,22 @@ func (p *Parser) ParseRightAssociative(preclvlel *list.Element) AST {
 	} else {
 		p.tokeniser.ReadToken()
 	}
-	rhs := p.ParseRightAssociative(preclvlel)
+	args := make([]AST, 2, len(opProperties.subsequentSymbols)+1)
+	args[0] = lhs
+	args[1] = p.ParseRightAssociative(preclvlel)
+	for i := 0; i < len(opProperties.subsequentSymbols); i++ {
+		nextSymbol := opProperties.subsequentSymbols[i]
+		if p.tokeniser.currToken == nextSymbol || p.tokeniser.currToken < NIL_TOKEN && nextSymbol == NIL_TOKEN {
+			if nextSymbol != NIL_TOKEN {
+				p.tokeniser.ReadToken()
+			}
+			args = append(args, p.ParseRightAssociative(preclvlel))
+		} else {
+			panic("Unexpected symbol")
+		}
+	}
 
-	return NewStatement([]AST{lhs, rhs}, opProperties)
+	return NewStatement(args, opProperties)
 }
 
 func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
