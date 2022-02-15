@@ -119,33 +119,33 @@ func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST {
 
 	impliedOpProp := preclvl.operators[NIL_TOKEN]
 
-	// if rhs is a binary operator
+	// if rhs is an operator
 	if !err {
-		// if it's the implied operation.
-		// Check needs to be modified to confirm whether the operator is in this precedence level.
-		if binRight.properties == impliedOpProp {
-			/*
-				      &
-				     / \
-				    #   &
-				   /|  / \
-				  / | #  ...
-				 /  |/ \ / \
-				a   b  ... ...
-			*/
+		// if it's an operator in this precedence level
+		if preclvl.OperatorExists(binRight.properties) {
 			binRightLeft, err := binRight.terms[0].(*Statement)
+			// wait, do I need to check if this operator is in this precedence level?
 			if !err {
+				/*
+						  &
+						 / \
+						#   &
+					   /|  / \
+					  / | #  ...
+					 /  |/ \ / \
+					a   b  ... ...
+				*/
 				return NewStatement([]AST{NewStatement([]AST{lhs, binRightLeft.terms[0]}, opProperties), binRight}, impliedOpProp)
+			} else {
+				/*
+						&
+					   / \
+					  #   #
+					 / \ / \
+					a   b   c
+				*/
+				return NewStatement([]AST{NewStatement([]AST{lhs, binRight.terms[0]}, opProperties), binRight}, impliedOpProp)
 			}
-		} else {
-			/*
-				    &
-				   / \
-				  #   #
-				 / \ / \
-				a   b   c
-			*/
-			return NewStatement([]AST{NewStatement([]AST{lhs, binRight.terms[0]}, opProperties), binRight}, impliedOpProp)
 		}
 	}
 	/*

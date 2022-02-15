@@ -15,3 +15,12 @@ precedence level bitmask:
 ------11 infix right associative
 -----X-- implied operation
 */
+
+func (pl *PrecedenceLevel) OperatorExists(op *OpProp) bool {
+	for _, v := range pl.operators {
+		if v == op {
+			return true
+		}
+	}
+	return false
+}
