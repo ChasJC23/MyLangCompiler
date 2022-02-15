@@ -114,7 +114,29 @@ func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST {
 	p.tokeniser.ReadToken()
 
 	rhs := p.ParseImpliedRightAssociative(preclvlel)
-	// wait what I have in the proof of concept doesn't make sense... whoops
+
+	/*
+		if rhs is a binary operator:
+			if it's the implied operation:
+				      &
+				     / \
+				    #   &
+				   /|  / \
+				  / | #  ...
+				 /  |/ \ / \
+				a   b  ... ...
+			otherwise:
+				    &
+				   / \
+				  #   #
+				 / \ / \
+				a   b   c
+		otherwise:
+			  #
+			 / \
+			a   b
+	*/
+
 	return NewStatement([]AST{lhs, rhs}, opProperties)
 }
 
