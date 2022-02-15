@@ -75,6 +75,7 @@ func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST {
 		return p.ParseLeaf()
 	}
 	lhs := p.ParsePrecedenceLevel(preclvlel.Next())
+
 	opProperties := preclvl.operators[p.tokeniser.currToken]
 	if opProperties == nil {
 		return lhs
@@ -99,7 +100,23 @@ func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST {
 	}
 }
 
-func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST
+func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST {
+	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
+	if err {
+		return p.ParseLeaf()
+	}
+	lhs := p.ParsePrecedenceLevel(preclvlel.Next())
+
+	opProperties := preclvl.operators[p.tokeniser.currToken]
+	if opProperties == nil {
+		return lhs
+	}
+	p.tokeniser.ReadToken()
+
+	rhs := p.ParseImpliedRightAssociative(preclvlel)
+	// wait what I have in the proof of concept doesn't make sense... whoops
+	return NewStatement([]AST{lhs, rhs}, opProperties)
+}
 
 func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
