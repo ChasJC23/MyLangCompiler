@@ -69,7 +69,35 @@ func (p *Parser) ParsePrecedenceLevel(preclvlel *list.Element) AST {
 	}
 }
 
-func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST
+func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST {
+	preclvl, err := preclvlel.Value.(*PrecedenceLevel)
+	if err {
+		return p.ParseLeaf()
+	}
+	lhs := p.ParsePrecedenceLevel(preclvlel.Next())
+	opProperties := preclvl.operators[p.tokeniser.currToken]
+	if opProperties == nil {
+		return lhs
+	}
+	p.tokeniser.ReadToken()
+
+	rhs := p.ParsePrecedenceLevel(preclvlel.Next())
+	expr := NewStatement([]AST{lhs, rhs}, opProperties)
+
+	impliedOpProp := preclvl.operators[NIL_TOKEN]
+
+	for {
+		opProperties = preclvl.operators[p.tokeniser.currToken]
+		if opProperties == nil {
+			return expr
+		}
+		p.tokeniser.ReadToken()
+
+		lhs = rhs
+		rhs = p.ParsePrecedenceLevel(preclvlel.Next())
+		expr = NewStatement([]AST{expr, NewStatement([]AST{lhs, rhs}, opProperties)}, impliedOpProp)
+	}
+}
 
 func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST
 
