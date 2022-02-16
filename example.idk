@@ -1,9 +1,0 @@
-; testing skipping comments.
-<--
-The syntax for a comment could be either:
-
-- One Line (In this example started with ;)
-- Block (In this example started with <--)
-
-And both need to be parsed correctly.
--->
