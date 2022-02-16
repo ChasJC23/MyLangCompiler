@@ -114,7 +114,8 @@ func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST {
 	}
 	p.tokeniser.ReadToken()
 
-	rhs := p.ParseImpliedRightAssociative(preclvlel)
+	args := p.getInfixArguments(preclvlel, lhs, opProperties)
+	rhs := args[len(args)-1]
 
 	binRight, err := rhs.(*Statement)
 
@@ -136,7 +137,7 @@ func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST {
 					 /  |/ \ / \
 					a   b  ... ...
 				*/
-				return NewStatement([]AST{NewStatement([]AST{lhs, binRightLeft.terms[0]}, opProperties), binRight}, impliedOpProp)
+				args[len(args)-1] = binRightLeft.terms[0]
 			} else {
 				/*
 						&
@@ -145,8 +146,9 @@ func (p *Parser) ParseImpliedRightAssociative(preclvlel *list.Element) AST {
 					 / \ / \
 					a   b   c
 				*/
-				return NewStatement([]AST{NewStatement([]AST{lhs, binRight.terms[0]}, opProperties), binRight}, impliedOpProp)
+				args[len(args)-1] = binRight.terms[0]
 			}
+			return NewStatement([]AST{NewStatement(args, opProperties), binRight}, impliedOpProp)
 		}
 	}
 	/*
