@@ -82,8 +82,9 @@ func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST {
 	}
 	p.tokeniser.ReadToken()
 
-	rhs := p.ParsePrecedenceLevel(preclvlel.Next())
-	expr := NewStatement([]AST{lhs, rhs}, opProperties)
+	args := p.getInfixArguments(preclvlel.Next(), lhs, opProperties)
+
+	expr := NewStatement(args, opProperties)
 
 	impliedOpProp := preclvl.operators[NIL_TOKEN]
 
@@ -94,9 +95,9 @@ func (p *Parser) ParseImpliedLeftAssociative(preclvlel *list.Element) AST {
 		}
 		p.tokeniser.ReadToken()
 
-		lhs = rhs
-		rhs = p.ParsePrecedenceLevel(preclvlel.Next())
-		expr = NewStatement([]AST{expr, NewStatement([]AST{lhs, rhs}, opProperties)}, impliedOpProp)
+		lhs = args[len(args)-1]
+		args = p.getInfixArguments(preclvlel.Next(), lhs, opProperties)
+		expr = NewStatement([]AST{expr, NewStatement(args, opProperties)}, impliedOpProp)
 	}
 }
 
@@ -183,20 +184,7 @@ func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 		}
 
 		// we've parsed the first argument, now we use the operator properties to deduce subsequent symbols to expect
-		args := make([]AST, 2, len(opProperties.subsequentSymbols)+1)
-		args[0] = lhs
-		args[1] = p.ParsePrecedenceLevel(preclvlel.Next())
-		for i := 0; i < len(opProperties.subsequentSymbols); i++ {
-			nextSymbol := opProperties.subsequentSymbols[i]
-			if p.tokeniser.currToken == nextSymbol || p.tokeniser.currToken < NIL_TOKEN && nextSymbol == NIL_TOKEN {
-				if nextSymbol != NIL_TOKEN {
-					p.tokeniser.ReadToken()
-				}
-				args = append(args, p.ParsePrecedenceLevel(preclvlel.Next()))
-			} else {
-				panic("Unexpected symbol")
-			}
-		}
+		args := p.getInfixArguments(preclvlel.Next(), lhs, opProperties)
 
 		lhs = NewStatement(args, opProperties)
 	}
@@ -221,20 +209,7 @@ func (p *Parser) ParseRightAssociative(preclvlel *list.Element) AST {
 	} else {
 		p.tokeniser.ReadToken()
 	}
-	args := make([]AST, 2, len(opProperties.subsequentSymbols)+1)
-	args[0] = lhs
-	args[1] = p.ParseRightAssociative(preclvlel)
-	for i := 0; i < len(opProperties.subsequentSymbols); i++ {
-		nextSymbol := opProperties.subsequentSymbols[i]
-		if p.tokeniser.currToken == nextSymbol || p.tokeniser.currToken < NIL_TOKEN && nextSymbol == NIL_TOKEN {
-			if nextSymbol != NIL_TOKEN {
-				p.tokeniser.ReadToken()
-			}
-			args = append(args, p.ParseRightAssociative(preclvlel))
-		} else {
-			panic("Unexpected symbol")
-		}
-	}
+	args := p.getInfixArguments(preclvlel, lhs, opProperties)
 
 	return NewStatement(args, opProperties)
 }
@@ -325,4 +300,22 @@ func (p *Parser) ParseLeaf() AST {
 	}
 	p.tokeniser.ReadToken()
 	return result
+}
+
+func (p *Parser) getInfixArguments(term_preclvlel *list.Element, firstArg AST, opProperties *OpProp) []AST {
+	args := make([]AST, 2, len(opProperties.subsequentSymbols)+1)
+	args[0] = firstArg
+	args[1] = p.ParsePrecedenceLevel(term_preclvlel)
+	for i := 0; i < len(opProperties.subsequentSymbols); i++ {
+		nextSymbol := opProperties.subsequentSymbols[i]
+		if p.tokeniser.currToken == nextSymbol || p.tokeniser.currToken < NIL_TOKEN && nextSymbol == NIL_TOKEN {
+			if nextSymbol != NIL_TOKEN {
+				p.tokeniser.ReadToken()
+			}
+			args = append(args, p.ParsePrecedenceLevel(term_preclvlel))
+		} else {
+			panic("Unexpected symbol")
+		}
+	}
+	return args
 }
