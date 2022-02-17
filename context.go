@@ -14,8 +14,8 @@ func NewOpContext() *OpContext {
 	r := new(OpContext)
 	r.opTree = NewOperatorTree()
 	r.opToken = INIT_TOKEN
-	r.opTree.AddOperator_rune(EOF_RUNE, EOF_TOKEN)
-	r.opTree.AddOperator_rune(NEWLINE_RUNE, NEWLINE_TOKEN)
+	r.opTree.AddOperator_rune(EOF_RUNE, EOF_TOKEN, 0)
+	r.opTree.AddOperator_rune(NEWLINE_RUNE, NEWLINE_TOKEN, NEWLINE_FLAG)
 	return r
 }
 
@@ -25,7 +25,7 @@ func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel, propertie
 	if newToken != NIL_TOKEN {
 		token = newToken
 	}
-	success := ctx.opTree.AddOperator(op, token)
+	success := ctx.opTree.AddOperator(op, token, 0)
 	if success && token == ctx.opToken {
 		ctx.opToken++
 	}

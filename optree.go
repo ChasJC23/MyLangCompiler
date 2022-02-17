@@ -8,15 +8,15 @@ type OperatorTree struct {
 	branches     map[rune]*OperatorTree
 	childOpCount int
 	// a bitmask stating whether any special tokens exist on this branch
-	controlOps    uint
-	operatorToken int
+	childControlOps uint
+	controlOps      uint
+	operatorToken   int
 }
 
 func NewOperatorTree() *OperatorTree {
 	m := make(map[rune]*OperatorTree)
 	o := new(OperatorTree)
 	o.branches = m
-	o.childOpCount = 0
 	o.operatorToken = NIL_TOKEN
 	return o
 }
@@ -34,13 +34,11 @@ func (tree *OperatorTree) String(formatrune bool) string {
 	return result + "}"
 }
 
-func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
+func (tree *OperatorTree) AddOperator(ra []rune, token int, controlOps uint) bool {
 	if len(ra) == 0 {
 		if tree.operatorToken == NIL_TOKEN {
 			tree.operatorToken = token
-			if token < NIL_TOKEN {
-				tree.controlOps |= 1 << ^token
-			}
+			tree.controlOps |= controlOps
 			return true
 		} else {
 			return false
@@ -52,41 +50,29 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int) bool {
 		branch = NewOperatorTree()
 		tree.branches[c] = branch
 	}
-	success := branch.AddOperator(ra[1:], token)
+	success := branch.AddOperator(ra[1:], token, controlOps)
 	if success {
 		tree.childOpCount++
 		if token < NIL_TOKEN {
-			tree.controlOps |= 1 << ^token
+			tree.childControlOps |= controlOps
 		}
 	}
 	return success
 }
 
-func (tree *OperatorTree) AddOperator_rune(r rune, token int) (worked bool) {
+func (tree *OperatorTree) AddOperator_rune(r rune, token int, controlOps uint) (worked bool) {
 	branch, ok := tree.branches[r]
-	if ok {
-		if branch.operatorToken == NIL_TOKEN {
-			branch.operatorToken = token
-			tree.childOpCount++
-			if token < NIL_TOKEN {
-				tree.controlOps |= 1 << ^token
-				branch.controlOps |= 1 << ^token
-			}
-			return true
-		} else {
-			return false
-		}
+	if ok && branch.operatorToken != NIL_TOKEN {
+		return false
 	} else {
 		branch = NewOperatorTree()
-		branch.operatorToken = token
 		tree.branches[r] = branch
-		tree.childOpCount++
-		if token < NIL_TOKEN {
-			tree.controlOps |= 1 << ^token
-			branch.controlOps |= 1 << ^token
-		}
-		return true
 	}
+	branch.operatorToken = token
+	tree.childOpCount++
+	tree.childControlOps |= controlOps
+	branch.controlOps |= controlOps
+	return true
 }
 
 func (tree *OperatorTree) PossibleCount(ra []rune) (int, *OperatorTree) {

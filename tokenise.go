@@ -43,33 +43,33 @@ func (tk *Tokeniser) ReadToken() {
 			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tk.currRune)
 		}
 		tk.currToken = branchDeducedOn.operatorToken
-		if tk.currToken == NIL_TOKEN {
-			panic("Invalid token")
-		} else
+		controlOps := branchDeducedOn.controlOps
 		// tokens with special meaning. Some need special care and attention.
-		if tk.currToken < NIL_TOKEN {
+		if controlOps != 0 {
 			// skipping block comments
-			if tk.currToken == OPEN_COMMENT_TOKEN {
-				tk.comment = tk.skipUntilControl(CLOSE_COMMENT_TOKEN)
+			if controlOps&OPEN_COMMENT_FLAG != 0 {
+				tk.comment = tk.skipUntilControl(CLOSE_COMMENT_FLAG)
 				tk.currToken = COMMENT_TOKEN
 			} else
 			// skipping line comments
-			if tk.currToken == COMMENT_TOKEN {
-				tk.comment = tk.skipUntilControl(NEWLINE_TOKEN)
+			if controlOps&COMMENT_FLAG != 0 {
+				tk.comment = tk.skipUntilControl(NEWLINE_FLAG)
 			} else
 			// parsing characters
-			if tk.currToken == OPEN_CHAR_LITERAL {
+			if controlOps&OPEN_CHAR_FLAG != 0 {
 				// TODO: escaped code points? In any case, a character isn't always represented by itself in code
 				// (plus this could be improved anyways)
-				charContent := tk.skipUntilControl(CLOSE_CHAR_LITERAL)
+				charContent := tk.skipUntilControl(CLOSE_CHAR_FLAG)
 				tk.charLiteral = []rune(charContent)[0]
 				tk.currToken = CHAR_LITERAL
 			} else
 			// parsing strings
-			if tk.currToken == OPEN_STRING_LITERAL {
-				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_LITERAL)
+			if controlOps&OPEN_STRING_FLAG != 0 {
+				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_FLAG)
 				tk.currToken = STRING_LITERAL
 			}
+		} else if tk.currToken == NIL_TOKEN {
+			panic("Invalid token")
 		}
 		return
 	}
@@ -114,8 +114,7 @@ func (tk *Tokeniser) ReadToken() {
 	tk.identifier = idenBuilder.String()
 }
 
-func (tk *Tokeniser) skipUntilControl(token int) string {
-	controlBit := uint(1 << ^token)
+func (tk *Tokeniser) skipUntilControl(controlBit uint) string {
 	buff := make([]rune, 0)
 	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true
@@ -128,9 +127,9 @@ func (tk *Tokeniser) skipUntilControl(token int) string {
 			branch = tk.opctx.opTree.branches[tk.currRune]
 			depth = len
 		}
-		if branch.operatorToken == token {
+		if (branch.controlOps & controlBit) != 0 {
 			searching = false
-		} else if (branch.controlOps & controlBit) != 0 {
+		} else if (branch.childControlOps & controlBit) != 0 {
 			len, _ := builder.WriteRune(tk.currRune)
 			buff = append(buff, tk.currRune)
 			branch = branch.branches[tk.currRune]
@@ -139,8 +138,8 @@ func (tk *Tokeniser) skipUntilControl(token int) string {
 			branch = tk.opctx.opTree.branches[tk.currRune]
 			for len(buff) != 0 {
 				buff = buff[1:]
-				found := branch.GetToken(buff)
-				if token == found {
+				found := branch.GetBranch(buff)
+				if (found.controlOps & controlBit) != 0 {
 					searching = false
 					break
 				}
