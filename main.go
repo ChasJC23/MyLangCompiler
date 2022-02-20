@@ -30,6 +30,9 @@ func main() {
 	opc.AddControlOperator([]rune("*/"), CLOSE_COMMENT_FLAG)
 	opc.AddFixedTokenOperator([]rune("{"), OPEN_CODE_BLOCK_TOKEN, 0)
 	opc.AddFixedTokenOperator([]rune("}"), CLOSE_CODE_BLOCK_TOKEN, 0)
+	opc.AddFixedTokenOperator([]rune("("), OPEN_PARENS_TOKEN, 0)
+	opc.AddFixedTokenOperator([]rune(")"), OPEN_PARENS_TOKEN, 0)
+	opc.AddFixedTokenOperator([]rune(";"), STATEMENT_ENDING_TOKEN, 0)
 	fmt.Println(opc.opTree.String(true))
 	tokeniser := NewTokeniser(reader, opc)
 	for tokeniser.currToken != EOF_TOKEN {

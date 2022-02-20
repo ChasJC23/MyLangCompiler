@@ -176,7 +176,7 @@ func (p *Parser) ParseLeftAssociative(preclvlel *list.Element) AST {
 
 			// we know the next symbol isn't in this precedence level,
 			// but still check if it's a control token in case of higher precedence operators.
-			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN {
+			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
 				return lhs
 			} else {
 				opProperties = nilOpProp
@@ -203,7 +203,7 @@ func (p *Parser) ParseRightAssociative(preclvlel *list.Element) AST {
 	// private function might be useful, quite a lot of redundancy here
 	if opProperties == nil {
 		nilOpProp := preclvl.operators[NIL_TOKEN]
-		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN {
+		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
 			return lhs
 		} else {
 			opProperties = nilOpProp
@@ -260,7 +260,7 @@ func (p *Parser) ParsePostfix(preclvlel *list.Element) AST {
 	stack := make(ASTStack, 0)
 
 	// The stack should be the deciding factor for when we complete this precedence level
-	for len(stack) != 1 {
+	for len(stack) != 1 && p.tokeniser.currToken != STATEMENT_ENDING_TOKEN {
 		opProperties := preclvl.operators[p.tokeniser.currToken]
 		// for symbols we don't recognise here, pass onto higher precedence parsing and add to the stack
 		if opProperties == nil {
@@ -276,6 +276,9 @@ func (p *Parser) ParsePostfix(preclvlel *list.Element) AST {
 			stack.Push(NewStatement(argumentSlice, opProperties))
 		}
 		p.tokeniser.ReadToken()
+	}
+	if len(stack) != 1 {
+		panic("unused arguments in postfix expression")
 	}
 	return stack[0]
 }
