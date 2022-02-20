@@ -2,20 +2,20 @@ package main
 
 // standard tokens
 const (
-	INIT_TOKEN       = 1
-	NIL_TOKEN        = 0
-	EOF_TOKEN        = -1
-	COMMENT_TOKEN    = -2
-	CHAR_LITERAL     = -3
-	STRING_LITERAL   = -4
-	INT_LITERAL      = -5
-	FLOAT_LITERAL    = -6
-	IDENTIFIER_TOKEN = -7
-	OPEN_PARENS      = -8
-	CLOSE_PARENS     = -9
-	OPEN_CODE_BLOCK  = -10
-	CLOSE_CODE_BLOCK = -11
-	NEWLINE_TOKEN    = -12
+	INIT_TOKEN             = 1
+	NIL_TOKEN              = 0
+	EOF_TOKEN              = -1
+	COMMENT_TOKEN          = -2
+	CHAR_LITERAL           = -3
+	STRING_LITERAL         = -4
+	INT_LITERAL            = -5
+	FLOAT_LITERAL          = -6
+	IDENTIFIER_TOKEN       = -7
+	OPEN_PARENS_TOKEN      = -8
+	CLOSE_PARENS_TOKEN     = -9
+	OPEN_CODE_BLOCK_TOKEN  = -10
+	CLOSE_CODE_BLOCK_TOKEN = -11
+	NEWLINE_TOKEN          = -12
 )
 
 // control flags

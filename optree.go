@@ -53,9 +53,7 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int, controlOps uint) boo
 	success := branch.AddOperator(ra[1:], token, controlOps)
 	if success {
 		tree.childOpCount++
-		if token < NIL_TOKEN {
-			tree.childControlOps |= controlOps
-		}
+		tree.childControlOps |= controlOps
 	}
 	return success
 }

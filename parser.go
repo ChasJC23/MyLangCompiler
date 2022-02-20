@@ -31,7 +31,7 @@ func (p *Parser) ParseSource() AST {
 // function responsible for parsing a specific code block
 func (p *Parser) ParseCodeBlock() AST {
 	statements := make([]AST, 0)
-	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK {
+	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
 		statements = append(statements, p.ParseStatement())
 	}
 	return NewCodeBlock(statements)
@@ -233,10 +233,10 @@ func (p *Parser) ParsePrefix(preclvlel *list.Element) AST {
 		isCodeBlock := opProperties.codeBlockArguments&bit != 0
 		var argument AST
 		if isCodeBlock {
-			if p.tokeniser.currToken == OPEN_CODE_BLOCK {
+			if p.tokeniser.currToken == OPEN_CODE_BLOCK_TOKEN {
 				p.tokeniser.ReadToken()
 				argument = p.ParseCodeBlock()
-				if p.tokeniser.currToken != CLOSE_CODE_BLOCK {
+				if p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
 					panic("missing close code block symbol")
 				}
 				p.tokeniser.ReadToken()
@@ -291,10 +291,10 @@ func (p *Parser) ParseLeaf() AST {
 		result = CharLiteral{p.tokeniser.charLiteral}
 	case STRING_LITERAL:
 		result = StringLiteral{p.tokeniser.stringLiteral}
-	case OPEN_PARENS:
+	case OPEN_PARENS_TOKEN:
 		p.tokeniser.ReadToken()
 		result = p.ParseStatement()
-		if p.tokeniser.currToken != CLOSE_PARENS {
+		if p.tokeniser.currToken != CLOSE_PARENS_TOKEN {
 			panic("missing parentheses")
 		}
 	case IDENTIFIER_TOKEN:

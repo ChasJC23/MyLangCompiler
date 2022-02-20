@@ -33,6 +33,18 @@ func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel, propertie
 	return success
 }
 
+func (ctx *OpContext) AddControlOperator(op []rune, flags uint) bool {
+	success := ctx.opTree.AddOperator(op, ctx.opToken, flags)
+	if success {
+		ctx.opToken++
+	}
+	return success
+}
+
+func (ctx *OpContext) AddFixedTokenOperator(op []rune, token int, flags uint) bool {
+	return ctx.opTree.AddOperator(op, token, flags)
+}
+
 func (ctx *OpContext) RenameOperator(oldname []rune, newname []rune) {
 	oldbranch := ctx.opTree.GetBranch(oldname)
 	token := oldbranch.operatorToken
