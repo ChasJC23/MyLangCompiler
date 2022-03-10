@@ -58,7 +58,7 @@ func (tree *OperatorTree) AddOperator(ra []rune, token int, controlOps uint) boo
 	return success
 }
 
-func (tree *OperatorTree) AddOperator_rune(r rune, token int, controlOps uint) (worked bool) {
+func (tree *OperatorTree) AddOperatorRune(r rune, token int, controlOps uint) (worked bool) {
 	branch, ok := tree.branches[r]
 	if ok && branch.operatorToken != NIL_TOKEN {
 		return false
@@ -81,8 +81,8 @@ func (tree *OperatorTree) PossibleCount(ra []rune) (int, *OperatorTree) {
 	return count, subtree
 }
 
-func (tree *OperatorTree) PossibleCount_rune(r rune) (int, *OperatorTree) {
-	count, subtree := tree.PossibleChildCount_rune(r)
+func (tree *OperatorTree) PossibleCountRune(r rune) (int, *OperatorTree) {
+	count, subtree := tree.PossibleChildCountRune(r)
 	if subtree.operatorToken != NIL_TOKEN && tree != subtree {
 		count++
 	}
@@ -102,7 +102,7 @@ func (tree *OperatorTree) PossibleChildCount(ra []rune) (int, *OperatorTree) {
 	}
 }
 
-func (tree *OperatorTree) PossibleChildCount_rune(r rune) (int, *OperatorTree) {
+func (tree *OperatorTree) PossibleChildCountRune(r rune) (int, *OperatorTree) {
 	branch, ok := tree.branches[r]
 	if ok {
 		return branch.childOpCount, branch

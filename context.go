@@ -14,8 +14,8 @@ func NewOpContext() *OpContext {
 	r := new(OpContext)
 	r.opTree = NewOperatorTree()
 	r.opToken = INIT_TOKEN
-	r.opTree.AddOperator_rune(EOF_RUNE, EOF_TOKEN, 0)
-	r.opTree.AddOperator_rune(NEWLINE_RUNE, NEWLINE_TOKEN, NEWLINE_FLAG)
+	r.opTree.AddOperatorRune(EOF_RUNE, EOF_TOKEN, 0)
+	r.opTree.AddOperatorRune(NEWLINE_RUNE, NEWLINE_TOKEN, NEWLINE_FLAG)
 	return r
 }
 

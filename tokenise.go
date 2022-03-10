@@ -36,11 +36,11 @@ func (tk *Tokeniser) ReadToken() {
 	tk.skipWhitespace()
 
 	// operators, symbols, etc.
-	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCount_rune(tk.currRune)
+	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCountRune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
 			tk.readRune()
-			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCount_rune(tk.currRune)
+			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCountRune(tk.currRune)
 		}
 		tk.currToken = branchDeducedOn.operatorToken
 		controlOps := branchDeducedOn.controlOps
@@ -92,6 +92,7 @@ func (tk *Tokeniser) ReadToken() {
 
 		// put things in the right places
 		var err error
+		// TODO: for numerical parsing, we need to write our own functions for the base syntax
 		if hasRadix {
 			tk.floatLiteral, err = strconv.ParseFloat(litBuilder.String(), 64)
 			tk.currToken = FLOAT_LITERAL
@@ -106,6 +107,7 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// anything else has to be an identifier
+	// TODO: failed operator parsing needs to redirect to variable parsing
 	var idenBuilder strings.Builder
 	for !unicode.IsSpace(tk.currRune) {
 		idenBuilder.WriteRune(tk.currRune)
@@ -122,18 +124,18 @@ func (tk *Tokeniser) skipUntilControl(controlBit uint) string {
 	depth := 1
 	for searching {
 		for branch == nil {
-			len, _ := builder.WriteRune(tk.currRune)
+			length, _ := builder.WriteRune(tk.currRune)
 			tk.readRune()
 			branch = tk.opctx.opTree.branches[tk.currRune]
-			depth = len
+			depth = length
 		}
 		if (branch.controlOps & controlBit) != 0 {
 			searching = false
 		} else if (branch.childControlOps & controlBit) != 0 {
-			len, _ := builder.WriteRune(tk.currRune)
+			length, _ := builder.WriteRune(tk.currRune)
 			buff = append(buff, tk.currRune)
 			branch = branch.branches[tk.currRune]
-			depth += len
+			depth += length
 		} else {
 			branch = tk.opctx.opTree.branches[tk.currRune]
 			for len(buff) != 0 {
@@ -144,8 +146,8 @@ func (tk *Tokeniser) skipUntilControl(controlBit uint) string {
 					break
 				}
 			}
-			len, _ := builder.WriteRune(tk.currRune)
-			depth = len
+			length, _ := builder.WriteRune(tk.currRune)
+			depth = length
 		}
 		tk.readRune()
 	}

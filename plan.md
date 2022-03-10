@@ -1,6 +1,6 @@
 # Language Plan
 
-All examples shown are standard operators used in mathematics or in the `C` programming language.
+All examples shown are standard operators used in modern mathematical notation or in the `C` programming language.
 
 ## Operator Tesseract
 
@@ -14,12 +14,12 @@ Each precedence level holds a set of operators with known properties, and some s
 
 Therefore, the set of all available operators can be represented using a table such as:
 
-Precedence | Layer type | NULL | `==` | `>` | `<` | `+` | `-` | `*` | `/` | `%`
----|---|---|---|---|---|---|---|---|---|---
-0 | Implied Operation Weak Left Associative Infix Binary | `bool_x2 -> bool` | `any_x2 -> bool` | `numeric_x2 -> bool` | `numeric_x2 -> bool` | - | - | - | - | -
-1 | Left Associative Infix Binary | - | - | - | - | `numeric_x2 -> numeric` | `numeric_x2 -> numeric` | - | - | -
-2 | Repeatable Prefix Unary | - | - | - | - | `numeric -> numeric` | `numeric -> numeric` | - | - | -
-3 | Left Associative Infix Binary | `numeric_x2 -> numeric` | - | - | - | - | - | `numeric_x2 -> numeric` | `numeric_x2 -> numeric` | `numeric_x2 -> numeric`
+| Precedence | Layer type                                           | NULL                    | `==`             | `>`                  | `<`                  | `+`                     | `-`                     | `*`                     | `/`                     | `%`                     |
+|------------|------------------------------------------------------|-------------------------|------------------|----------------------|----------------------|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|
+| 0          | Implied Operation Weak Left Associative Infix Binary | `bool_x2 -> bool`       | `any_x2 -> bool` | `numeric_x2 -> bool` | `numeric_x2 -> bool` | -                       | -                       | -                       | -                       | -                       |
+| 1          | Left Associative Infix Binary                        | -                       | -                | -                    | -                    | `numeric_x2 -> numeric` | `numeric_x2 -> numeric` | -                       | -                       | -                       |
+| 2          | Repeatable Prefix Unary                              | -                       | -                | -                    | -                    | `numeric -> numeric`    | `numeric -> numeric`    | -                       | -                       | -                       |
+| 3          | Left Associative Infix Binary                        | `numeric_x2 -> numeric` | -                | -                    | -                    | -                       | -                       | `numeric_x2 -> numeric` | `numeric_x2 -> numeric` | `numeric_x2 -> numeric` |
 
 ## Operators
 
@@ -62,10 +62,6 @@ These implied operations can also be used with ordinary associative operators, i
 
 A binary operator can be defined as prefix (`+ x y`), infix (`x + y`), or postfix (`x y +`). An operator level must enforce one of these formats. For implied operations to work as intended, a binary operator level must enforce the infix format.
 
-### Ternary Operators
-
-A ternary operator is one which concerns three arguments.
-
 ### Extended Operators
 
 Operators making use of the prefix or postfix notation can be extended indefinitely as long as there do not exist any implicit operations. For operators with multiple arguments, associativity works identically to binary operators. In order to support extended infix operators, a symbol must separate all arguments. If not, at least one is necessary, and the same implicit operation restriction applies.
@@ -77,3 +73,27 @@ During parsing, when encountering a prefix operator of lower precedence than the
 ### Colliding Operator Symbols
 
 Multiple operators may have the same symbol. In some cases, this results in one or more operators which are left unused, and therefore will prematurely end translation. The simplest case where multiple operators can have the same symbol is when one is a prefix operator, and the other is not. Therefore, there can only ever be at most two operators a symbol can represent.
+
+### Many Symbol Operators
+
+Operators which enforce prefix or infix notation may optionally require additional symbols between arguments. This syntax allows for operators such as the ternary operator present in C: `predicate ? expr1 : expr2`.
+
+## Default Operators
+
+Many of the default operators have special syntax features which cannot be used in user-defined operators.
+
+<!--
+    Will need to do a bit of a rethink with the `defop` operator, as specifying later symbols of the operator can get pretty messy.
+-->
+
+| Operator         | ASCII Alias    | Type                     | Description                                                                                                                                                                                                                                                                                           |
+|------------------|----------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `_ ≔ _`          | `_ := _`       | Non-Associative Binary   | This operator declares and defines the left side variable using the expression supplied on the right side.                                                                                                                                                                                            |
+| `_ ← _`          | `_ <- _`       | Non-Associative Binary   | This operator assigns the right side expression to the left side variable.                                                                                                                                                                                                                            |
+| `_ → _`          | `_ -> _`       | Right-Associative Binary | This type operator represents a mapping from one set to another, specified by its two arguments.                                                                                                                                                                                                      |
+| `_ ∈ _`          | `_ E _`        | Non-Associative Binary   | This operator specifies the set, or type, a variable belongs to.                                                                                                                                                                                                                                      |
+| `_ ? _ : _`      | Not Applicable | Right-Associative Binary | This operator, most commonly written in the form `_ ? {} : {}`, represents an if-else statement. The else clause is optional, and if both clauses are single expressions, behaviour is identical to the ternary operator present in the C programming language.                                       |
+| `_ ⁇ _`          | `_ ?? _`       | Right-Associative Binary | This operator, most commonly written in the form `_ ?? {}`, represents a while loop.                                                                                                                                                                                                                  |
+| `_ _ ⁇`          | `_ _ ??`       | Postfix                  | This operator, most commonly written in the form `{} _ ??`, represents a do-while loop.                                                                                                                                                                                                               |
+| `defop _ () _ _` | Not Applicable | Prefix                   | This operator is used to define new operators using an example use in the parentheses to specify the given arguments. The first symbol of the operator is specified in the first argument; The precedence is defined in the second argument; and the code for the operator is specified in the third. |
+| `prog {}`        | Not Applicable | Prefix                   | This operator specifies the entrypoint to a program compiled using this source file.                                                                                                                                                                                                                  |

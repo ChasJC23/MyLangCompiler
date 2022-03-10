@@ -24,7 +24,7 @@ func main() {
 	}
 	reader := bufio.NewReader(srcFile)
 	opc := NewOpContext()
-	// let's try parsing a C program!
+	// let's try parsing a JS program!
 	opc.AddFixedTokenOperator([]rune("//"), COMMENT_TOKEN, COMMENT_FLAG)
 	opc.AddControlOperator([]rune("/*"), OPEN_COMMENT_FLAG)
 	opc.AddControlOperator([]rune("*/"), CLOSE_COMMENT_FLAG)
@@ -39,5 +39,8 @@ func main() {
 		fmt.Println(tokeniser.comment)
 		tokeniser.ReadToken()
 	}
-	defer srcFile.Close()
+	err = srcFile.Close()
+	if err != nil {
+		panic(err)
+	}
 }
