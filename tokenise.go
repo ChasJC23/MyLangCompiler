@@ -90,14 +90,26 @@ func (tk *Tokeniser) ReadToken() {
 			tk.readRune()
 		}
 
+		// check for subscript base notation
+		var base int
+		if IsSubscript(tk.currRune) {
+			base = 0
+			for IsSubscript(tk.currRune) {
+				base *= 10
+				base += NumericSubscriptValue(tk.currRune)
+				tk.readRune()
+			}
+		} else {
+			base = 10
+		}
+
 		// put things in the right places
 		var err error
-		// TODO: for numerical parsing, we need to write our own functions for the base syntax
 		if hasRadix {
 			tk.floatLiteral, err = strconv.ParseFloat(litBuilder.String(), 64)
 			tk.currToken = FLOAT_LITERAL
 		} else {
-			tk.intLiteral, err = strconv.ParseInt(litBuilder.String(), 0, 64)
+			tk.intLiteral, err = strconv.ParseInt(litBuilder.String(), base, 64)
 			tk.currToken = INT_LITERAL
 		}
 		if err != nil {
@@ -111,6 +123,7 @@ func (tk *Tokeniser) ReadToken() {
 	var idenBuilder strings.Builder
 	for !unicode.IsSpace(tk.currRune) {
 		idenBuilder.WriteRune(tk.currRune)
+		tk.readRune()
 	}
 	tk.currToken = IDENTIFIER_TOKEN
 	tk.identifier = idenBuilder.String()

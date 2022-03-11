@@ -2,19 +2,17 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
-	"io/fs"
 	"os"
 )
 
-var srcFilePath = flag.Arg(0)
+var srcFilePath string // = flag.Arg(0)
 
 func init() {
-	flag.Parse()
-	if !fs.ValidPath(srcFilePath) {
-		srcFilePath = "example.idk"
-	}
+	//flag.Parse()
+	//if !fs.ValidPath(srcFilePath) {
+	srcFilePath = "example.idk"
+	//}
 }
 
 func main() {
