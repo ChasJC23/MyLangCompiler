@@ -106,7 +106,7 @@ func (tk *Tokeniser) ReadToken() {
 		// put things in the right places
 		var err error
 		if hasRadix {
-			tk.floatLiteral, err = strconv.ParseFloat(litBuilder.String(), 64)
+			tk.floatLiteral, err = ParseFloat(litBuilder.String(), 64)
 			tk.currToken = FLOAT_LITERAL
 		} else {
 			tk.intLiteral, err = strconv.ParseInt(litBuilder.String(), base, 64)
