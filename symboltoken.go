@@ -13,53 +13,26 @@ func NumericSubscriptValue(r rune) int {
 	return int(r - '\u2080')
 }
 
-func separateFloat(s string) (iml, fml, exl int, hasRadix, hasExp, negMan, negExp, manSign, expSign bool) {
+func separateFloat(s string, base int) (ml int, hasExp, manSign, expSign bool) {
 	index := 0
-	if s[index] == '-' {
-		negMan = true
-		manSign = true
-		index++
-	} else if s[index] == '+' {
+	if s[index] == '-' || s[index] == '+' {
 		manSign = true
 		index++
 	}
 	for index < len(s) {
-		if s[index] == '.' || s[index] == 'e' {
-			hasRadix = hasRadix || s[index] == '.'
-			hasExp = hasExp || s[index] == 'e'
-			break
-		}
-		iml++
-		index++
-	}
-	if index >= len(s) {
-		return
-	}
-	if s[index] == '.' {
-		index++
-	}
-	for index < len(s) {
-		if s[index] == 'e' {
+		if s[index] == 'e' && base <= 10 || s[index] == 'p' && base > 10 {
 			hasExp = true
 			break
 		}
-		fml++
+		ml++
 		index++
 	}
 	index++
 	if index >= len(s) {
 		return
 	}
-	if s[index] == '-' {
-		negExp = true
+	if s[index] == '-' || s[index] == '+' {
 		expSign = true
-		index++
-	} else if s[index] == '+' {
-		expSign = true
-		index++
-	}
-	for index < len(s) {
-		exl++
 		index++
 	}
 	return
@@ -73,17 +46,41 @@ func squareBase(s string, base int) string {
 		numBuilder.WriteByte(s[index])
 		index++
 	}
-	digits := len(s) - index
+	// before anything, check if there's a radix in here anywhere
+	radixIndex := len(s)
+	for i := index; i < len(s); i++ {
+		if s[i] == RADIX {
+			radixIndex = i
+			break
+		}
+	}
+	// this is the number of digits before the radix point
+	digits := radixIndex - index
+	// and this is the total number of characters ignoring leading sign
+	totalCount := len(s) - index
 	// if the length is odd, write in our first character
 	if digits%2 == 1 {
 		numBuilder.WriteByte(s[index])
 		index++
 	}
 	byteBase := uint8(base)
-	for index < digits {
+	for index < totalCount {
+		// the radix is here!
+		if index == digits {
+			numBuilder.WriteByte(s[index])
+			index++
+		}
+		if index == len(s) {
+			break
+		}
 		ms := s[index]
 		index++
-		ls := s[index]
+		var ls byte
+		if index == len(s) {
+			ls = '0'
+		} else {
+			ls = s[index]
+		}
 		index++
 		next := (ms-'0')*byteBase + ls
 		if next > '9' {
@@ -100,35 +97,32 @@ func ParseFloat(s string, base int) (float64, error) {
 	} else if base == 16 {
 		return strconv.ParseFloat("0x"+s, 64)
 	} else {
-		// TODO: get rid of unused return arguments, separateFloat is only ever used here
-		iml, fml, _, hasradix, hasexp, _, _, mansign, _ := separateFloat(s)
-		if base == 4 {
+		ml, hasExp, manSign, _ := separateFloat(s, base)
+		if base == 4 || base == 2 {
 			var numBuilder strings.Builder
-			var intMantissa string
+			var mantissa string
 			numBuilder.WriteString("0x")
-			index := iml
-			if mansign {
+			index := ml
+			if manSign {
 				numBuilder.WriteByte(s[index])
 				index++
-				intMantissa = s[1 : 1+iml]
+				mantissa = s[1 : 1+ml]
 			} else {
-				intMantissa = s[0:iml]
+				mantissa = s[0:ml]
 			}
-			numBuilder.WriteString(squareBase(intMantissa, base))
-			if hasradix {
-				numBuilder.WriteByte(s[index])
-				index++
+			if base == 2 {
+				mantissa = squareBase(mantissa, 2)
 			}
-			fracMantissa := s[index : index+fml]
-			index += fml
-			// TODO: the fractional part of the mantissa needs to be treated differently, sort it out in squareBase?
-			numBuilder.WriteString(squareBase(fracMantissa, base))
-			if hasexp {
+			numBuilder.WriteString(squareBase(mantissa, 4))
+			if hasExp {
 				numBuilder.WriteByte(s[index])
 				index++
 			}
 			exponent := s[index:]
-			numBuilder.WriteString(squareBase(exponent, base))
+			if base == 2 {
+				exponent = squareBase(exponent, 2)
+			}
+			numBuilder.WriteString(squareBase(exponent, 4))
 			return strconv.ParseFloat(numBuilder.String(), 64)
 		}
 		return 0, nil
