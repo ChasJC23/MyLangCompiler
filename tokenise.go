@@ -35,10 +35,14 @@ func (tk *Tokeniser) ReadToken() {
 	// ignore whitespace
 	tk.skipWhitespace()
 
+	// just in case operator parsing fails partway through, we should at least try to treat it like a variable
+	var idenBuilder strings.Builder
+
 	// operators, symbols, etc.
 	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCountRune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
+			idenBuilder.WriteRune(tk.currRune)
 			tk.readRune()
 			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCountRune(tk.currRune)
 		}
@@ -57,8 +61,7 @@ func (tk *Tokeniser) ReadToken() {
 			} else
 			// parsing characters
 			if controlOps&OPEN_CHAR_FLAG != 0 {
-				// TODO: escaped code points? In any case, a character isn't always represented by itself in code
-				// (plus this could be improved anyways)
+				// TODO: escaped code points? In any case, a character isn't always represented by itself in code (plus this could be improved anyways)
 				charContent := tk.skipUntilControl(CLOSE_CHAR_FLAG)
 				tk.charLiteral = []rune(charContent)[0]
 				tk.currToken = CHAR_LITERAL
@@ -68,10 +71,9 @@ func (tk *Tokeniser) ReadToken() {
 				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_FLAG)
 				tk.currToken = STRING_LITERAL
 			}
-		} else if tk.currToken == NIL_TOKEN {
-			panic("Invalid token")
+		} else if tk.currToken != NIL_TOKEN {
+			return
 		}
-		return
 	}
 
 	// numeric literals
@@ -119,8 +121,6 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// anything else has to be an identifier
-	// TODO: failed operator parsing needs to redirect to variable parsing
-	var idenBuilder strings.Builder
 	for !unicode.IsSpace(tk.currRune) {
 		idenBuilder.WriteRune(tk.currRune)
 		tk.readRune()

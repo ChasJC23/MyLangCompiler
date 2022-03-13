@@ -87,6 +87,8 @@ func TestParseFloat(t *testing.T) {
 	}{
 		{"call original library base 10", args{"3456.645136e12", 10}, 3456.645136e12, false},
 		{"call original library base 16", args{"2C67.3948Ap11", 16}, 0x2C67.3948Ap11, false},
+		{"try base 4", args{"1001.3212301132123e12", 4}, 0x41.E6C5E6Cp6, false},
+		{"try base 4 power not base 10", args{"1001.3212301132123e22", 4}, 0x41.E6C5E6Cp22, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

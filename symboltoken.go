@@ -20,7 +20,7 @@ func separateFloat(s string, base int) (ml int, hasExp, manSign, expSign bool) {
 		index++
 	}
 	for index < len(s) {
-		if s[index] == 'e' && base <= 10 || s[index] == 'p' && base > 10 {
+		if s[index] == 'e' && base <= 10 || s[index] == 'p' {
 			hasExp = true
 			break
 		}
@@ -115,14 +115,13 @@ func ParseFloat(s string, base int) (float64, error) {
 			}
 			numBuilder.WriteString(squareBase(mantissa, 4))
 			if hasExp {
-				numBuilder.WriteByte(s[index])
+				// we might have 'e' at this position instead of 'p'
+				numBuilder.WriteByte('p')
 				index++
 			}
+			// TODO: the exponent needs to be base 10, so either I need to convert to base 10 to use the built in atof or just write my own...
 			exponent := s[index:]
-			if base == 2 {
-				exponent = squareBase(exponent, 2)
-			}
-			numBuilder.WriteString(squareBase(exponent, 4))
+			numBuilder.WriteString(exponent)
 			return strconv.ParseFloat(numBuilder.String(), 64)
 		}
 		return 0, nil
