@@ -14,7 +14,7 @@ func NewParser(tokeniser *Tokeniser) *Parser {
 	return parser
 }
 
-// ParseSource function responsible for parsing an entire source file
+// ParseSource is responsible for parsing an entire source file
 func (p *Parser) ParseSource() AST {
 
 	result := p.ParseCodeBlock()
@@ -28,7 +28,7 @@ func (p *Parser) ParseSource() AST {
 	return result
 }
 
-// ParseCodeBlock function responsible for parsing a specific code block
+// ParseCodeBlock is responsible for parsing a specific code block
 func (p *Parser) ParseCodeBlock() AST {
 	statements := make([]AST, 0)
 	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
@@ -37,10 +37,10 @@ func (p *Parser) ParseCodeBlock() AST {
 	return NewCodeBlock(statements)
 }
 
-// ParseStatement function responsible for parsing any arbitrary statement.
+// ParseStatement is responsible for parsing any arbitrary statement.
 // This may be any individual line of code.
 func (p *Parser) ParseStatement() AST {
-	preclvlel := p.opctx.precList.Front()
+	preclvlel := p.opctx.precedenceList.Front()
 	result := p.ParsePrecedenceLevel(preclvlel)
 	return result
 }

@@ -36,13 +36,13 @@ func (tk *Tokeniser) ReadToken() {
 	tk.skipWhitespace()
 
 	// just in case operator parsing fails partway through, we should at least try to treat it like a variable
-	var idenBuilder strings.Builder
+	var identifierBuilder strings.Builder
 
 	// operators, symbols, etc.
 	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCountRune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
-			idenBuilder.WriteRune(tk.currRune)
+			identifierBuilder.WriteRune(tk.currRune)
 			tk.readRune()
 			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCountRune(tk.currRune)
 		}
@@ -122,11 +122,11 @@ func (tk *Tokeniser) ReadToken() {
 
 	// anything else has to be an identifier
 	for !unicode.IsSpace(tk.currRune) {
-		idenBuilder.WriteRune(tk.currRune)
+		identifierBuilder.WriteRune(tk.currRune)
 		tk.readRune()
 	}
 	tk.currToken = IDENTIFIER_TOKEN
-	tk.identifier = idenBuilder.String()
+	tk.identifier = identifierBuilder.String()
 }
 
 func (tk *Tokeniser) skipUntilControl(controlBit uint) string {

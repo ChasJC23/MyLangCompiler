@@ -6,8 +6,8 @@ type OpContext struct {
 	// the tree used to find the token for a given operator
 	opTree *OperatorTree
 	// the list of all precedence levels used in a particular parsing session
-	precList *list.List
-	opToken  int
+	precedenceList *list.List
+	opToken        int
 }
 
 func NewOpContext() *OpContext {
@@ -19,7 +19,7 @@ func NewOpContext() *OpContext {
 	return r
 }
 
-func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel, properties *OpProp) bool {
+func (ctx *OpContext) AddOperator(op []rune, precedenceLevel *PrecedenceLevel, properties *OpProp) bool {
 	token := ctx.opToken
 	newToken := ctx.opTree.GetToken(op)
 	if newToken != NIL_TOKEN {
@@ -29,8 +29,16 @@ func (ctx *OpContext) AddOperator(op []rune, preclvl *PrecedenceLevel, propertie
 	if success && token == ctx.opToken {
 		ctx.opToken++
 	}
-	preclvl.operators[token] = properties
+	precedenceLevel.operators[token] = properties
 	return success
+}
+
+func (ctx *OpContext) AddOperatorAt(op []rune, precedence int, properties *OpProp) bool {
+	precedenceLevel := ctx.precedenceList.Front()
+	for i := 0; i < precedence; i++ {
+		precedenceLevel = precedenceLevel.Next()
+	}
+	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
 }
 
 func (ctx *OpContext) AddControlOperator(op []rune, flags uint) bool {
@@ -45,10 +53,26 @@ func (ctx *OpContext) AddFixedTokenOperator(op []rune, token int, flags uint) bo
 	return ctx.opTree.AddOperator(op, token, flags)
 }
 
-func (ctx *OpContext) RenameOperator(oldname []rune, newname []rune) {
-	oldbranch := ctx.opTree.GetBranch(oldname)
-	token := oldbranch.operatorToken
-	oldbranch.operatorToken = NIL_TOKEN
-	newbranch := ctx.opTree.GetBranch(newname)
-	newbranch.operatorToken = token
+func (ctx *OpContext) RenameOperator(oldName []rune, newName []rune) {
+	oldBranch := ctx.opTree.GetBranch(oldName)
+	token := oldBranch.operatorToken
+	oldBranch.operatorToken = NIL_TOKEN
+	newBranch := ctx.opTree.GetBranch(newName)
+	newBranch.operatorToken = token
+}
+
+func (ctx *OpContext) AddLowestPrecedenceLevel(precedenceLevel *PrecedenceLevel) {
+	ctx.precedenceList.PushFront(precedenceLevel)
+}
+
+func (ctx *OpContext) AddHighestPrecedenceLevel(precedenceLevel *PrecedenceLevel) {
+	ctx.precedenceList.PushBack(precedenceLevel)
+}
+
+func (ctx *OpContext) AddLowerPrecedenceLevel(level *PrecedenceLevel, mark *list.Element) {
+	ctx.precedenceList.InsertBefore(level, mark)
+}
+
+func (ctx *OpContext) AddHigherPrecedenceLevel(level *PrecedenceLevel, mark *list.Element) {
+	ctx.precedenceList.InsertAfter(level, mark)
 }
