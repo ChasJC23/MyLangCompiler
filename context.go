@@ -41,6 +41,16 @@ func (ctx *OpContext) AddOperatorAt(op []rune, precedence int, properties *OpPro
 	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
 }
 
+func (ctx *OpContext) AddOperatorToLowest(op []rune, properties *OpProp) bool {
+	precedenceLevel := ctx.precedenceList.Front()
+	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
+}
+
+func (ctx *OpContext) AddOperatorToHighest(op []rune, properties *OpProp) bool {
+	precedenceLevel := ctx.precedenceList.Back()
+	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
+}
+
 func (ctx *OpContext) AddControlOperator(op []rune, flags uint) bool {
 	success := ctx.opTree.AddOperator(op, ctx.opToken, flags)
 	if success {

@@ -21,15 +21,15 @@ func NewOperatorTree() *OperatorTree {
 	return o
 }
 
-func (tree *OperatorTree) String(formatrune bool) string {
+func (tree *OperatorTree) String(formatRune bool) string {
 	result := "[" + strconv.FormatInt(int64(tree.operatorToken), 10) + "]{"
 	for i, v := range tree.branches {
-		if formatrune {
+		if formatRune {
 			result += strconv.FormatInt(int64(i), 10)
 		} else {
 			result += string(i)
 		}
-		result += ":" + v.String(formatrune) + ","
+		result += ":" + v.String(formatRune) + ","
 	}
 	return result + "}"
 }

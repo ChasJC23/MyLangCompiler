@@ -16,6 +16,14 @@ precedence level bitmask:
 -----X-- implied operation
 */
 
+const (
+	PREFIX                  = 0b00
+	POSTFIX                 = 0b01
+	INFIX_LEFT_ASSOCIATIVE  = 0b10
+	INFIX_RIGHT_ASSOCIATIVE = 0b11
+	IMPLIED_OPERATION       = 0b100
+)
+
 func (pl *PrecedenceLevel) OperatorExists(op *OpProp) bool {
 	for _, v := range pl.operators {
 		if v == op {

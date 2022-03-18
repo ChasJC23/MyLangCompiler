@@ -9,6 +9,24 @@ import (
 
 func TestParser_ParseSource(t *testing.T) {
 	testContext := NewOpContext()
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_LEFT_ASSOCIATIVE | IMPLIED_OPERATION,
+		operators:  make(map[int]*OpProp),
+	})
+	testContext.AddOperatorToHighest([]rune("="), &OpProp{
+		subsequentSymbols:  nil,
+		codeBlockArguments: 0,
+		argumentCount:      2,
+	})
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_LEFT_ASSOCIATIVE,
+		operators:  make(map[int]*OpProp),
+	})
+	testContext.AddOperatorToHighest([]rune("+"), &OpProp{
+		subsequentSymbols:  nil,
+		codeBlockArguments: 0,
+		argumentCount:      2,
+	})
 	testExpression := bufio.NewReader(strings.NewReader("9 + 10 = 21"))
 	testTokeniser := NewTokeniser(testExpression, testContext)
 	type fields struct {
