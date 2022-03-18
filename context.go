@@ -13,13 +13,38 @@ type OpContext struct {
 func NewOpContext() *OpContext {
 	r := new(OpContext)
 	r.opTree = NewOperatorTree()
+	r.precedenceList = list.New()
 	r.opToken = INIT_TOKEN
 	r.opTree.AddOperatorRune(EOF_RUNE, EOF_TOKEN, 0)
 	r.opTree.AddOperatorRune(NEWLINE_RUNE, NEWLINE_TOKEN, NEWLINE_FLAG)
 	return r
 }
 
-func (ctx *OpContext) AddOperator(op []rune, precedenceLevel *PrecedenceLevel, properties *OpProp) bool {
+// AddOperator adds a new operator to the current context and the given precedence level.
+// It returns a boolean representing whether the addition was successful or not.
+func (ctx *OpContext) AddOperator(symbols []string, precedenceLevel *PrecedenceLevel, codeBlockArguments uint, argumentCount int) bool {
+	op := symbols[0]
+	symbols = symbols[1:]
+	token, success := ctx.addOperatorToken([]rune(op))
+	subsequentSymbols := make([]int, len(symbols))
+	for i, symbol := range symbols {
+		newToken, newSuccess := ctx.addOperatorToken([]rune(symbol))
+		success = success && newSuccess
+		subsequentSymbols[i] = newToken
+	}
+	if success {
+		properties := new(OpProp)
+		properties.argumentCount = argumentCount
+		properties.codeBlockArguments = codeBlockArguments
+		properties.subsequentSymbols = subsequentSymbols
+		precedenceLevel.operators[token] = properties
+	}
+	return success
+}
+
+// addOperatorToken adds a new operator symbol to the operator tree.
+// Returns the generated token for this new symbol.
+func (ctx *OpContext) addOperatorToken(op []rune) (int, bool) {
 	token := ctx.opToken
 	newToken := ctx.opTree.GetToken(op)
 	if newToken != NIL_TOKEN {
@@ -29,26 +54,25 @@ func (ctx *OpContext) AddOperator(op []rune, precedenceLevel *PrecedenceLevel, p
 	if success && token == ctx.opToken {
 		ctx.opToken++
 	}
-	precedenceLevel.operators[token] = properties
-	return success
+	return token, success
 }
 
-func (ctx *OpContext) AddOperatorAt(op []rune, precedence int, properties *OpProp) bool {
+func (ctx *OpContext) AddOperatorAt(symbols []string, precedence int, codeBlockArguments uint, argumentCount int) bool {
 	precedenceLevel := ctx.precedenceList.Front()
 	for i := 0; i < precedence; i++ {
 		precedenceLevel = precedenceLevel.Next()
 	}
-	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
+	return ctx.AddOperator(symbols, precedenceLevel.Value.(*PrecedenceLevel), codeBlockArguments, argumentCount)
 }
 
-func (ctx *OpContext) AddOperatorToLowest(op []rune, properties *OpProp) bool {
+func (ctx *OpContext) AddOperatorToLowest(symbols []string, codeBlockArguments uint, argumentCount int) bool {
 	precedenceLevel := ctx.precedenceList.Front()
-	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
+	return ctx.AddOperator(symbols, precedenceLevel.Value.(*PrecedenceLevel), codeBlockArguments, argumentCount)
 }
 
-func (ctx *OpContext) AddOperatorToHighest(op []rune, properties *OpProp) bool {
+func (ctx *OpContext) AddOperatorToHighest(symbols []string, codeBlockArguments uint, argumentCount int) bool {
 	precedenceLevel := ctx.precedenceList.Back()
-	return ctx.AddOperator(op, precedenceLevel.Value.(*PrecedenceLevel), properties)
+	return ctx.AddOperator(symbols, precedenceLevel.Value.(*PrecedenceLevel), codeBlockArguments, argumentCount)
 }
 
 func (ctx *OpContext) AddControlOperator(op []rune, flags uint) bool {
