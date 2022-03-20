@@ -40,14 +40,17 @@ func (p *Parser) ParseCodeBlock() AST {
 // ParseStatement is responsible for parsing any arbitrary statement.
 // This may be any individual line of code.
 func (p *Parser) ParseStatement() AST {
-	preclvlel := p.opctx.precedenceList.Front()
-	result := p.ParsePrecedenceLevel(preclvlel)
+	precedenceListElement := p.opctx.precedenceList.Front()
+	result := p.ParsePrecedenceLevel(precedenceListElement)
 	return result
 }
 
 func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(*PrecedenceLevel)
-	if err {
+	if precedenceListElement == nil {
+		return p.ParseLeaf()
+	}
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	// check bitmask in precedence_level.go
@@ -70,8 +73,8 @@ func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) AST {
 }
 
 func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(*PrecedenceLevel)
-	if err {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
@@ -102,8 +105,8 @@ func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element
 }
 
 func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(*PrecedenceLevel)
-	if err {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
@@ -117,17 +120,17 @@ func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Elemen
 	args := p.getInfixArguments(precedenceListElement, lhs, opProperties)
 	rhs := args[len(args)-1]
 
-	binRight, err := rhs.(*Statement)
+	binRight, ok := rhs.(*Statement)
 
 	impliedOpProp := precedenceLevel.operators[NIL_TOKEN]
 
 	// if rhs is an operator
-	if !err {
+	if ok {
 		// if it's an operator in this precedence level
 		if precedenceLevel.OperatorExists(binRight.properties) {
-			binRightLeft, err := binRight.terms[0].(*Statement)
+			binRightLeft, ok := binRight.terms[0].(*Statement)
 			// if the right-hand side is the implied operation (this "!err &&" might cause some unexpected behaviour for weirdly structured trees)
-			if !err && binRight.properties == impliedOpProp {
+			if ok && binRight.properties == impliedOpProp {
 				/*
 						  &
 						 / \
@@ -160,8 +163,8 @@ func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Elemen
 }
 
 func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(*PrecedenceLevel)
-	if err {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
@@ -193,8 +196,8 @@ func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) AST {
 }
 
 func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(PrecedenceLevel)
-	if err {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
@@ -217,8 +220,8 @@ func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) AST 
 }
 
 func (p *Parser) ParsePrefix(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(*PrecedenceLevel)
-	if err {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
@@ -252,8 +255,8 @@ func (p *Parser) ParsePrefix(precedenceListElement *list.Element) AST {
 }
 
 func (p *Parser) ParsePostfix(precedenceListElement *list.Element) AST {
-	precedenceLevel, err := precedenceListElement.Value.(*PrecedenceLevel)
-	if err {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
 		return p.ParseLeaf()
 	}
 	// stack based parsing
@@ -308,7 +311,7 @@ func (p *Parser) ParseLeaf() AST {
 }
 
 func (p *Parser) getInfixArguments(termPrecedenceListElement *list.Element, firstArg AST, opProperties *OpProp) []AST {
-	args := make([]AST, 2, len(opProperties.subsequentSymbols)+1)
+	args := make([]AST, 2, len(opProperties.subsequentSymbols)+2)
 	args[0] = firstArg
 	args[1] = p.ParsePrecedenceLevel(termPrecedenceListElement)
 	for i := 0; i < len(opProperties.subsequentSymbols); i++ {

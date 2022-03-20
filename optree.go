@@ -36,7 +36,10 @@ func (tree *OperatorTree) String(formatRune bool) string {
 
 func (tree *OperatorTree) AddOperator(ra []rune, token int, controlOps uint) bool {
 	if len(ra) == 0 {
-		if tree.operatorToken == NIL_TOKEN {
+		// if we're adding in the same token,
+		// which may occur if we have one symbol represent multiple operations like -,
+		// then we should allow it.
+		if tree.operatorToken == NIL_TOKEN || tree.operatorToken == token {
 			tree.operatorToken = token
 			tree.controlOps |= controlOps
 			return true

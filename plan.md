@@ -58,6 +58,8 @@ Some operators require some implied operation for chaining and therefore associa
 
 These implied operations can also be used with ordinary associative operators, in which case they act when the two arguments are placed adjacent to one another. For example: `3 * x` can be rephrased as `3x` using the implied operation for multiplication.
 
+Implied operations must always use binary infix notation.
+
 #### Prefix / Infix / Postfix
 
 A binary operator can be defined as prefix (`+ x y`), infix (`x + y`), or postfix (`x y +`). An operator level must enforce one of these formats. For implied operations to work as intended, a binary operator level must enforce the infix format.

@@ -47,6 +47,9 @@ func (ctx *OpContext) AddOperator(symbols []string, precedenceLevel *PrecedenceL
 func (ctx *OpContext) addOperatorToken(op []rune) (int, bool) {
 	token := ctx.opToken
 	newToken := ctx.opTree.GetToken(op)
+	// in the case of symbols with multiple interpretations
+	// such as : in case _: and _ ? _ : _,
+	// we should leave the token unchanged.
 	if newToken != NIL_TOKEN {
 		token = newToken
 	}
