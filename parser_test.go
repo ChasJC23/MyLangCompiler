@@ -13,41 +13,122 @@ func TestParser_ParseSource(t *testing.T) {
 		properties: INFIX_LEFT_ASSOCIATIVE | IMPLIED_OPERATION,
 		operators:  make(map[int]*OpProp),
 	})
-	testContext.AddOperatorToHighest([]string{"="}, 0, 2)
-	eqProperties := testContext.precedenceList.Back().Value.(*PrecedenceLevel).operators[testContext.opTree.GetToken([]rune("="))]
+	eqProperties := testContext.AddOperatorToHighest([]string{"="}, 0, 2)
+	ltProperties := testContext.AddOperatorToHighest([]string{"<"}, 0, 2)
+	conjProperties := testContext.AddOperatorToHighest([]string{""}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_LEFT_ASSOCIATIVE,
 		operators:  make(map[int]*OpProp),
 	})
-	testContext.AddOperatorToHighest([]string{"+"}, 0, 2)
-	plusProperties := testContext.precedenceList.Back().Value.(*PrecedenceLevel).operators[testContext.opTree.GetToken([]rune("+"))]
-	testExpression := bufio.NewReader(strings.NewReader("9 + 10 = 21"))
-	testTokeniser := NewTokeniser(testExpression, testContext)
-	type fields struct {
-		tokeniser *Tokeniser
-		opctx     *OpContext
-	}
+	// prodProperties := testContext.AddOperatorToHighest([]string{"*"}, 0, 2)
+	divProperties := testContext.AddOperatorToHighest([]string{"/"}, 0, 2)
+	// juxProperties := testContext.AddOperatorToHighest([]string{""}, 0, 2)
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_LEFT_ASSOCIATIVE,
+		operators:  make(map[int]*OpProp),
+	})
+	plusProperties := testContext.AddOperatorToHighest([]string{"+"}, 0, 2)
 	tests := []struct {
-		name   string
-		fields fields
-		want   AST
+		name       string
+		expression *bufio.Reader
+		context    *OpContext
+		want       AST
 	}{
-		{"what's 9 + 10?", fields{testTokeniser, testContext}, &CodeBlock{[]AST{&Statement{
-			terms: []AST{
-				&Statement{
-					terms:      []AST{IntLiteral{9}, IntLiteral{10}},
-					properties: plusProperties,
+		{"what's 9 + 10?", bufio.NewReader(strings.NewReader("9 + 10 = 21")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							&Statement{
+								terms:      []AST{IntLiteral{9}, IntLiteral{10}},
+								properties: plusProperties,
+							},
+							IntLiteral{21},
+						},
+						properties: eqProperties,
+					},
 				},
-				IntLiteral{21},
 			},
-			properties: eqProperties,
-		}}}},
+		},
+		{"Inequalities", bufio.NewReader(strings.NewReader("0/1 < 1/3 < 1/2 < 2/3 < 1/1")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							&Statement{
+								terms: []AST{
+									&Statement{
+										terms: []AST{
+											&Statement{
+												terms: []AST{
+													&Statement{
+														terms:      []AST{IntLiteral{0}, IntLiteral{1}},
+														properties: divProperties,
+													},
+													&Statement{
+														terms:      []AST{IntLiteral{1}, IntLiteral{3}},
+														properties: divProperties,
+													},
+												},
+												properties: ltProperties,
+											},
+											&Statement{
+												terms: []AST{
+													&Statement{
+														terms:      []AST{IntLiteral{1}, IntLiteral{3}},
+														properties: divProperties,
+													},
+													&Statement{
+														terms:      []AST{IntLiteral{1}, IntLiteral{2}},
+														properties: divProperties,
+													},
+												},
+												properties: ltProperties,
+											},
+										},
+										properties: conjProperties,
+									},
+									&Statement{
+										terms: []AST{
+											&Statement{
+												terms:      []AST{IntLiteral{1}, IntLiteral{2}},
+												properties: divProperties,
+											},
+											&Statement{
+												terms:      []AST{IntLiteral{2}, IntLiteral{3}},
+												properties: divProperties,
+											},
+										},
+										properties: ltProperties,
+									},
+								},
+								properties: conjProperties,
+							},
+							&Statement{
+								terms: []AST{
+									&Statement{
+										terms:      []AST{IntLiteral{2}, IntLiteral{3}},
+										properties: divProperties,
+									},
+									&Statement{
+										terms:      []AST{IntLiteral{1}, IntLiteral{1}},
+										properties: divProperties,
+									},
+								},
+								properties: ltProperties,
+							},
+						},
+						properties: conjProperties,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Parser{
-				tokeniser: tt.fields.tokeniser,
-				opctx:     tt.fields.opctx,
+				tokeniser: NewTokeniser(tt.expression, tt.context),
+				opctx:     tt.context,
 			}
 			if got := p.ParseSource(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseSource() = %v, want %v", got, tt.want)

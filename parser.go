@@ -129,7 +129,7 @@ func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Elemen
 		// if it's an operator in this precedence level
 		if precedenceLevel.OperatorExists(binRight.properties) {
 			binRightLeft, ok := binRight.terms[0].(*Statement)
-			// if the right-hand side is the implied operation (this "!err &&" might cause some unexpected behaviour for weirdly structured trees)
+			// if the right-hand side is the implied operation (this "ok &&" might cause some unexpected behaviour for weirdly structured trees)
 			if ok && binRight.properties == impliedOpProp {
 				/*
 						  &
