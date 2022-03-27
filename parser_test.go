@@ -10,11 +10,17 @@ import (
 func TestParser_ParseSource(t *testing.T) {
 	testContext := NewOpContext()
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_RIGHT_ASSOCIATIVE,
+		operators:  make(map[int]*OpProp),
+	})
+	ternProperties := testContext.AddOperatorToHighest([]string{"?", ":"}, 0, 3)
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_LEFT_ASSOCIATIVE | IMPLIED_OPERATION,
 		operators:  make(map[int]*OpProp),
 	})
 	eqProperties := testContext.AddOperatorToHighest([]string{"="}, 0, 2)
 	ltProperties := testContext.AddOperatorToHighest([]string{"<"}, 0, 2)
+	geProperties := testContext.AddOperatorToHighest([]string{">="}, 0, 2)
 	conjProperties := testContext.AddOperatorToHighest([]string{""}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_LEFT_ASSOCIATIVE,
@@ -28,6 +34,13 @@ func TestParser_ParseSource(t *testing.T) {
 		operators:  make(map[int]*OpProp),
 	})
 	plusProperties := testContext.AddOperatorToHighest([]string{"+"}, 0, 2)
+	//minusProperties := testContext.AddOperatorToHighest([]string{"-"}, 0, 2)
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: PREFIX,
+		operators:  make(map[int]*OpProp),
+	})
+	//posProperties := testContext.AddOperatorToHighest([]string{"+"}, 0, 1)
+	negProperties := testContext.AddOperatorToHighest([]string{"-"}, 0, 1)
 	tests := []struct {
 		name       string
 		expression *bufio.Reader
@@ -119,6 +132,26 @@ func TestParser_ParseSource(t *testing.T) {
 							},
 						},
 						properties: conjProperties,
+					},
+				},
+			},
+		},
+		{"Ternary time", bufio.NewReader(strings.NewReader("x >= 0 ? 1 : -1")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							&Statement{
+								terms:      []AST{Identifier{"x"}, IntLiteral{0}},
+								properties: geProperties,
+							},
+							IntLiteral{1},
+							&Statement{
+								terms:      []AST{IntLiteral{1}},
+								properties: negProperties,
+							},
+						},
+						properties: ternProperties,
 					},
 				},
 			},
