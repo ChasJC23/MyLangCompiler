@@ -32,6 +32,10 @@ type StringLiteral struct {
 	value string
 }
 
+type BoolLiteral struct {
+	value bool
+}
+
 func NewCodeBlock(lines []AST) *CodeBlock {
 	result := new(CodeBlock)
 	result.lines = lines

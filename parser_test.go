@@ -9,7 +9,19 @@ import (
 
 func TestParser_ParseSource(t *testing.T) {
 	testContext := NewOpContext()
+	testContext.opTree.AddOperatorRune('{', OPEN_CODE_BLOCK_TOKEN, 0)
+	testContext.opTree.AddOperatorRune('}', CLOSE_CODE_BLOCK_TOKEN, 0)
+	testContext.opTree.AddOperatorRune('(', OPEN_PARENS_TOKEN, 0)
+	testContext.opTree.AddOperatorRune(')', CLOSE_PARENS_TOKEN, 0)
 	testContext.opTree.AddOperatorRune(';', STATEMENT_ENDING_TOKEN, 0)
+	testContext.AddFixedTokenOperator([]rune("true"), TRUE_LITERAL, 0)
+	testContext.AddFixedTokenOperator([]rune("false"), FALSE_LITERAL, 0)
+
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: PREFIX,
+		operators:  make(map[int]*OpProp),
+	})
+	ifProperties := testContext.AddOperatorToHighest([]string{"if"}, 0b10, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_RIGHT_ASSOCIATIVE,
 		operators:  make(map[int]*OpProp),
@@ -46,7 +58,7 @@ func TestParser_ParseSource(t *testing.T) {
 	})
 	prodProperties := testContext.AddOperatorToHighest([]string{"*"}, 0, 2)
 	divProperties := testContext.AddOperatorToHighest([]string{"/"}, 0, 2)
-	/*juxProperties :=*/ testContext.AddOperatorToHighest([]string{}, 0, 2)
+	// juxProperties := testContext.AddOperatorToHighest([]string{}, 0, 2)
 	tests := []struct {
 		name       string
 		expression *bufio.Reader
@@ -162,7 +174,7 @@ func TestParser_ParseSource(t *testing.T) {
 				},
 			},
 		},
-		{"Multiple lines", bufio.NewReader(strings.NewReader("x := 9 - 4;y := x * 3")), testContext,
+		{"Multiple lines", bufio.NewReader(strings.NewReader("x := 9 - 4;\ny := x * 3")), testContext,
 			&CodeBlock{
 				[]AST{
 					&Statement{
@@ -184,6 +196,41 @@ func TestParser_ParseSource(t *testing.T) {
 							},
 						},
 						properties: assignProperties,
+					},
+				},
+			},
+		},
+		{"Condition", bufio.NewReader(strings.NewReader("if true { mean := ( a + b ) / 2 }")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							BoolLiteral{true},
+							&CodeBlock{
+								[]AST{
+									&Statement{
+										terms: []AST{
+											Identifier{"mean"},
+											&Statement{
+												terms: []AST{
+													&Statement{
+														terms: []AST{
+															Identifier{"a"},
+															Identifier{"b"},
+														},
+														properties: addProperties,
+													},
+													IntLiteral{2},
+												},
+												properties: divProperties,
+											},
+										},
+										properties: assignProperties,
+									},
+								},
+							},
+						},
+						properties: ifProperties,
 					},
 				},
 			},

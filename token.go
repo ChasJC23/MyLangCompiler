@@ -17,6 +17,8 @@ const (
 	CLOSE_CODE_BLOCK_TOKEN = -11
 	NEWLINE_TOKEN          = -12
 	STATEMENT_ENDING_TOKEN = -13
+	TRUE_LITERAL           = -14
+	FALSE_LITERAL          = -15
 )
 
 // control flags

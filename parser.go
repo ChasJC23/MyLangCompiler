@@ -233,9 +233,9 @@ func (p *Parser) ParsePrefix(precedenceListElement *list.Element) AST {
 	}
 	argumentCount := opProperties.argumentCount
 	argumentSlice := make([]AST, argumentCount)
+	p.tokeniser.ReadToken()
 	// uh... that works I guess
 	for argumentIndex, bit := 0, uint(1); argumentIndex < argumentCount; argumentIndex, bit = argumentIndex+1, bit<<1 {
-		p.tokeniser.ReadToken()
 		isCodeBlock := opProperties.codeBlockArguments&bit != 0
 		var argument AST
 		if isCodeBlock {
@@ -300,6 +300,10 @@ func (p *Parser) ParseLeaf() AST {
 		result = CharLiteral{p.tokeniser.charLiteral}
 	case STRING_LITERAL:
 		result = StringLiteral{p.tokeniser.stringLiteral}
+	case TRUE_LITERAL:
+		result = BoolLiteral{true}
+	case FALSE_LITERAL:
+		result = BoolLiteral{false}
 	case OPEN_PARENS_TOKEN:
 		p.tokeniser.ReadToken()
 		result = p.ParseStatement()
