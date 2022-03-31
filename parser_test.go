@@ -9,6 +9,12 @@ import (
 
 func TestParser_ParseSource(t *testing.T) {
 	testContext := NewOpContext()
+	testContext.opTree.AddOperatorRune(';', STATEMENT_ENDING_TOKEN, 0)
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_RIGHT_ASSOCIATIVE,
+		operators:  make(map[int]*OpProp),
+	})
+	assignProperties := testContext.AddOperatorToHighest([]string{":="}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_RIGHT_ASSOCIATIVE,
 		operators:  make(map[int]*OpProp),
@@ -21,26 +27,26 @@ func TestParser_ParseSource(t *testing.T) {
 	eqProperties := testContext.AddOperatorToHighest([]string{"="}, 0, 2)
 	ltProperties := testContext.AddOperatorToHighest([]string{"<"}, 0, 2)
 	geProperties := testContext.AddOperatorToHighest([]string{">="}, 0, 2)
-	conjProperties := testContext.AddOperatorToHighest([]string{""}, 0, 2)
+	conjProperties := testContext.AddOperatorToHighest([]string{}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_LEFT_ASSOCIATIVE,
 		operators:  make(map[int]*OpProp),
 	})
-	// prodProperties := testContext.AddOperatorToHighest([]string{"*"}, 0, 2)
-	divProperties := testContext.AddOperatorToHighest([]string{"/"}, 0, 2)
-	// juxProperties := testContext.AddOperatorToHighest([]string{""}, 0, 2)
-	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
-		properties: INFIX_LEFT_ASSOCIATIVE,
-		operators:  make(map[int]*OpProp),
-	})
-	plusProperties := testContext.AddOperatorToHighest([]string{"+"}, 0, 2)
-	//minusProperties := testContext.AddOperatorToHighest([]string{"-"}, 0, 2)
+	addProperties := testContext.AddOperatorToHighest([]string{"+"}, 0, 2)
+	subProperties := testContext.AddOperatorToHighest([]string{"-"}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: PREFIX,
 		operators:  make(map[int]*OpProp),
 	})
 	//posProperties := testContext.AddOperatorToHighest([]string{"+"}, 0, 1)
 	negProperties := testContext.AddOperatorToHighest([]string{"-"}, 0, 1)
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_LEFT_ASSOCIATIVE,
+		operators:  make(map[int]*OpProp),
+	})
+	prodProperties := testContext.AddOperatorToHighest([]string{"*"}, 0, 2)
+	divProperties := testContext.AddOperatorToHighest([]string{"/"}, 0, 2)
+	/*juxProperties :=*/ testContext.AddOperatorToHighest([]string{}, 0, 2)
 	tests := []struct {
 		name       string
 		expression *bufio.Reader
@@ -54,7 +60,7 @@ func TestParser_ParseSource(t *testing.T) {
 						terms: []AST{
 							&Statement{
 								terms:      []AST{IntLiteral{9}, IntLiteral{10}},
-								properties: plusProperties,
+								properties: addProperties,
 							},
 							IntLiteral{21},
 						},
@@ -152,6 +158,32 @@ func TestParser_ParseSource(t *testing.T) {
 							},
 						},
 						properties: ternProperties,
+					},
+				},
+			},
+		},
+		{"Multiple lines", bufio.NewReader(strings.NewReader("x := 9 - 4;y := x * 3")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							Identifier{"x"},
+							&Statement{
+								terms:      []AST{IntLiteral{9}, IntLiteral{4}},
+								properties: subProperties,
+							},
+						},
+						properties: assignProperties,
+					},
+					&Statement{
+						terms: []AST{
+							Identifier{"y"},
+							&Statement{
+								terms:      []AST{Identifier{"x"}, IntLiteral{3}},
+								properties: prodProperties,
+							},
+						},
+						properties: assignProperties,
 					},
 				},
 			},

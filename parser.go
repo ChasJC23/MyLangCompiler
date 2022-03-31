@@ -33,6 +33,9 @@ func (p *Parser) ParseCodeBlock() AST {
 	statements := make([]AST, 0)
 	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
 		statements = append(statements, p.ParseStatement())
+		if p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
+			p.tokeniser.ReadToken()
+		}
 	}
 	return NewCodeBlock(statements)
 }
@@ -179,7 +182,7 @@ func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) AST {
 
 			// we know the next symbol isn't in this precedence level,
 			// but still check if it's a control token in case of higher precedence operators.
-			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
+			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
 				return lhs
 			} else {
 				opProperties = nilOpProp
@@ -206,7 +209,7 @@ func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) AST 
 	// private function might be useful, quite a lot of redundancy here
 	if opProperties == nil {
 		nilOpProp := precedenceLevel.operators[NIL_TOKEN]
-		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
+		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
 			return lhs
 		} else {
 			opProperties = nilOpProp

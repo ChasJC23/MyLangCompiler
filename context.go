@@ -28,8 +28,8 @@ func (ctx *OpContext) AddOperator(symbols []string, precedenceLevel *PrecedenceL
 		op = ""
 	} else {
 		op = symbols[0]
+		symbols = symbols[1:]
 	}
-	symbols = symbols[1:]
 	var success bool
 	var token int
 	// for the NIL operator, we don't actually want to generate a new token,
