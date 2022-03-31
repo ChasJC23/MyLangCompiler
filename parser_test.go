@@ -237,7 +237,7 @@ func TestParser_ParseSource(t *testing.T) {
 				},
 			},
 		},
-		{"Obfuscated", bufio.NewReader(strings.NewReader("x:=3;y:=x>6?3:2;ify>x y<-y-1")), testContext,
+		{"Obfuscated", bufio.NewReader(strings.NewReader("x:=3;y:=x>6?3:2;if y>x y<-y-1")), testContext,
 			&CodeBlock{
 				[]AST{
 					&Statement{

@@ -35,54 +35,6 @@ func (tk *Tokeniser) ReadToken() {
 	// ignore whitespace
 	tk.skipWhitespace()
 
-	// just in case operator parsing fails partway through, we should at least try to treat it like a variable
-	var identifierBuilder strings.Builder
-	validIdentifier := true
-
-	// operators, symbols, etc.
-	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCountRune(tk.currRune)
-	if possibleCount > 0 {
-		for possibleCount > 0 {
-			if validIdentifier {
-				if unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune) {
-					identifierBuilder.WriteRune(tk.currRune)
-				} else {
-					validIdentifier = false
-				}
-			}
-			tk.readRune()
-			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCountRune(tk.currRune)
-		}
-		tk.currToken = branchDeducedOn.operatorToken
-		controlOps := branchDeducedOn.controlOps
-		// tokens with special meaning. Some need special care and attention.
-		if controlOps != 0 {
-			// skipping block comments
-			if controlOps&OPEN_COMMENT_FLAG != 0 {
-				tk.comment = tk.skipUntilControl(CLOSE_COMMENT_FLAG)
-				tk.currToken = COMMENT_TOKEN
-			} else
-			// skipping line comments
-			if controlOps&COMMENT_FLAG != 0 {
-				tk.comment = tk.skipUntilControl(NEWLINE_FLAG)
-			} else
-			// parsing characters
-			if controlOps&OPEN_CHAR_FLAG != 0 {
-				// TODO: escaped code points? In any case, a character isn't always represented by itself in code (plus this could be improved anyways)
-				charContent := tk.skipUntilControl(CLOSE_CHAR_FLAG)
-				tk.charLiteral = []rune(charContent)[0]
-				tk.currToken = CHAR_LITERAL
-			} else
-			// parsing strings
-			if controlOps&OPEN_STRING_FLAG != 0 {
-				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_FLAG)
-				tk.currToken = STRING_LITERAL
-			}
-		} else if tk.currToken != NIL_TOKEN {
-			return
-		}
-	}
-
 	// numeric literals
 	if unicode.IsDigit(tk.currRune) || tk.currRune == RADIX {
 
@@ -125,6 +77,60 @@ func (tk *Tokeniser) ReadToken() {
 			panic("poorly formatted number")
 		}
 		return
+	}
+
+	// just in case operator parsing fails partway through, we should at least try to treat it like a variable
+	var identifierBuilder strings.Builder
+	validIdentifier := true
+
+	// operators, symbols, etc.
+	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCountRune(tk.currRune)
+	if possibleCount > 0 {
+		for possibleCount > 0 {
+			if validIdentifier {
+				if unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune) {
+					identifierBuilder.WriteRune(tk.currRune)
+				} else {
+					validIdentifier = false
+				}
+			}
+			tk.readRune()
+			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCountRune(tk.currRune)
+		}
+		var controlOps uint
+		if validIdentifier && (unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune)) {
+			tk.currToken = NIL_TOKEN
+			controlOps = 0
+		} else {
+			tk.currToken = branchDeducedOn.operatorToken
+			controlOps = branchDeducedOn.controlOps
+		}
+		// tokens with special meaning. Some need special care and attention.
+		if controlOps != 0 {
+			// skipping block comments
+			if controlOps&OPEN_COMMENT_FLAG != 0 {
+				tk.comment = tk.skipUntilControl(CLOSE_COMMENT_FLAG)
+				tk.currToken = COMMENT_TOKEN
+			} else
+			// skipping line comments
+			if controlOps&COMMENT_FLAG != 0 {
+				tk.comment = tk.skipUntilControl(NEWLINE_FLAG)
+			} else
+			// parsing characters
+			if controlOps&OPEN_CHAR_FLAG != 0 {
+				// TODO: escaped code points? In any case, a character isn't always represented by itself in code (plus this could be improved anyways)
+				charContent := tk.skipUntilControl(CLOSE_CHAR_FLAG)
+				tk.charLiteral = []rune(charContent)[0]
+				tk.currToken = CHAR_LITERAL
+			} else
+			// parsing strings
+			if controlOps&OPEN_STRING_FLAG != 0 {
+				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_FLAG)
+				tk.currToken = STRING_LITERAL
+			}
+		} else if tk.currToken != NIL_TOKEN {
+			return
+		}
 	}
 
 	// anything else has to be an identifier
