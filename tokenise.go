@@ -37,12 +37,19 @@ func (tk *Tokeniser) ReadToken() {
 
 	// just in case operator parsing fails partway through, we should at least try to treat it like a variable
 	var identifierBuilder strings.Builder
+	validIdentifier := true
 
 	// operators, symbols, etc.
 	possibleCount, branchDeducedOn := tk.opctx.opTree.PossibleCountRune(tk.currRune)
 	if possibleCount > 0 {
 		for possibleCount > 0 {
-			identifierBuilder.WriteRune(tk.currRune)
+			if validIdentifier {
+				if unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune) {
+					identifierBuilder.WriteRune(tk.currRune)
+				} else {
+					validIdentifier = false
+				}
+			}
 			tk.readRune()
 			possibleCount, branchDeducedOn = branchDeducedOn.PossibleCountRune(tk.currRune)
 		}
@@ -77,7 +84,7 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// numeric literals
-	if unicode.IsNumber(tk.currRune) || tk.currRune == RADIX {
+	if unicode.IsDigit(tk.currRune) || tk.currRune == RADIX {
 
 		// set up with first character
 		var litBuilder strings.Builder
@@ -86,7 +93,7 @@ func (tk *Tokeniser) ReadToken() {
 		tk.readRune()
 
 		// add following characters
-		for unicode.IsNumber(tk.currRune) || !hasRadix && tk.currRune == RADIX {
+		for unicode.IsDigit(tk.currRune) || !hasRadix && tk.currRune == RADIX {
 			litBuilder.WriteRune(tk.currRune)
 			hasRadix = hasRadix || tk.currRune == RADIX
 			tk.readRune()
@@ -121,7 +128,7 @@ func (tk *Tokeniser) ReadToken() {
 	}
 
 	// anything else has to be an identifier
-	for !unicode.IsSpace(tk.currRune) {
+	for unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune) {
 		identifierBuilder.WriteRune(tk.currRune)
 		tk.readRune()
 	}

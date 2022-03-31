@@ -26,7 +26,8 @@ func TestParser_ParseSource(t *testing.T) {
 		properties: INFIX_RIGHT_ASSOCIATIVE,
 		operators:  make(map[int]*OpProp),
 	})
-	assignProperties := testContext.AddOperatorToHighest([]string{":="}, 0, 2)
+	declareProperties := testContext.AddOperatorToHighest([]string{":="}, 0, 2)
+	assignProperties := testContext.AddOperatorToHighest([]string{"<-"}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: INFIX_RIGHT_ASSOCIATIVE,
 		operators:  make(map[int]*OpProp),
@@ -38,6 +39,7 @@ func TestParser_ParseSource(t *testing.T) {
 	})
 	eqProperties := testContext.AddOperatorToHighest([]string{"="}, 0, 2)
 	ltProperties := testContext.AddOperatorToHighest([]string{"<"}, 0, 2)
+	gtProperties := testContext.AddOperatorToHighest([]string{">"}, 0, 2)
 	geProperties := testContext.AddOperatorToHighest([]string{">="}, 0, 2)
 	conjProperties := testContext.AddOperatorToHighest([]string{}, 0, 2)
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
@@ -185,7 +187,7 @@ func TestParser_ParseSource(t *testing.T) {
 								properties: subProperties,
 							},
 						},
-						properties: assignProperties,
+						properties: declareProperties,
 					},
 					&Statement{
 						terms: []AST{
@@ -195,12 +197,12 @@ func TestParser_ParseSource(t *testing.T) {
 								properties: prodProperties,
 							},
 						},
-						properties: assignProperties,
+						properties: declareProperties,
 					},
 				},
 			},
 		},
-		{"Condition", bufio.NewReader(strings.NewReader("if true { mean := ( a + b ) / 2 }")), testContext,
+		{"Condition", bufio.NewReader(strings.NewReader("if true { mean := (a + b) / 2 }")), testContext,
 			&CodeBlock{
 				[]AST{
 					&Statement{
@@ -225,9 +227,55 @@ func TestParser_ParseSource(t *testing.T) {
 												properties: divProperties,
 											},
 										},
-										properties: assignProperties,
+										properties: declareProperties,
 									},
 								},
+							},
+						},
+						properties: ifProperties,
+					},
+				},
+			},
+		},
+		{"Obfuscated", bufio.NewReader(strings.NewReader("x:=3;y:=x>6?3:2;ify>x y<-y-1")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms:      []AST{Identifier{"x"}, IntLiteral{3}},
+						properties: declareProperties,
+					},
+					&Statement{
+						terms: []AST{
+							Identifier{"y"},
+							&Statement{
+								terms: []AST{
+									&Statement{
+										terms:      []AST{Identifier{"x"}, IntLiteral{6}},
+										properties: gtProperties,
+									},
+									IntLiteral{3},
+									IntLiteral{2},
+								},
+								properties: ternProperties,
+							},
+						},
+						properties: declareProperties,
+					},
+					&Statement{
+						terms: []AST{
+							&Statement{
+								terms:      []AST{Identifier{"y"}, Identifier{"x"}},
+								properties: gtProperties,
+							},
+							&Statement{
+								terms: []AST{
+									Identifier{"y"},
+									&Statement{
+										terms:      []AST{Identifier{"y"}, IntLiteral{1}},
+										properties: subProperties,
+									},
+								},
+								properties: assignProperties,
 							},
 						},
 						properties: ifProperties,
