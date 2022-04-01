@@ -341,8 +341,10 @@ func TestParser_ParseSource(t *testing.T) {
 				tokeniser: NewTokeniser(tt.expression, tt.context),
 				opctx:     tt.context,
 			}
+			t.Log(tt.want.String())
 			if got := p.ParseSource(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseSource() = %v, want %v", got, tt.want)
+				t.Log(got.String())
 			}
 		})
 	}
