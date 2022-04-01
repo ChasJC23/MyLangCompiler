@@ -67,7 +67,7 @@ func (tk *Tokeniser) ReadToken() {
 		// put things in the right places
 		var err error
 		if hasRadix {
-			tk.floatLiteral, err = ParseFloat(litBuilder.String(), 64)
+			tk.floatLiteral, err = ParseFloat(litBuilder.String(), base)
 			tk.currToken = FLOAT_LITERAL
 		} else {
 			tk.intLiteral, err = strconv.ParseInt(litBuilder.String(), base, 64)
@@ -111,10 +111,14 @@ func (tk *Tokeniser) ReadToken() {
 			if controlOps&OPEN_COMMENT_FLAG != 0 {
 				tk.comment, _ = tk.skipUntilControl(CLOSE_COMMENT_FLAG)
 				tk.currToken = COMMENT_TOKEN
+				// skip comments for now
+				tk.ReadToken()
 			} else
 			// skipping line comments
 			if controlOps&COMMENT_FLAG != 0 {
 				tk.comment, _ = tk.skipUntilControl(NEWLINE_FLAG)
+				// skip comments for now
+				tk.ReadToken()
 			} else
 			// parsing characters
 			if controlOps&OPEN_CHAR_FLAG != 0 {

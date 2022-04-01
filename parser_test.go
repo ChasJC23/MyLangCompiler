@@ -286,7 +286,7 @@ func TestParser_ParseSource(t *testing.T) {
 				},
 			},
 		},
-		{"Commented Code", bufio.NewReader(strings.NewReader("x1 := -0.9 /* this is a C style comment */\nx2 := x1 * x1 // and this is a single line comment\n - 0.9\nx3 /* third iteration */ := /* square */ x2 * x2 /* seed */ - 0.9\n// and one more comment to finish it off")), testContext,
+		{"Commented Code", bufio.NewReader(strings.NewReader("x1 := -0.5 /* this is a C style comment */\nx2 := x1 * x1 // and this is a single line comment\n - 0.5\nx3 /* third iteration */ := /* square */ x2 * x2 /* seed */ - 0.5\n// and one more comment to finish it off")), testContext,
 			&CodeBlock{
 				[]AST{
 					&Statement{
