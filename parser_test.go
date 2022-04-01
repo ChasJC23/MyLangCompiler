@@ -16,6 +16,9 @@ func TestParser_ParseSource(t *testing.T) {
 	testContext.opTree.AddOperatorRune(';', STATEMENT_ENDING_TOKEN, 0)
 	testContext.AddFixedTokenOperator([]rune("true"), TRUE_LITERAL, 0)
 	testContext.AddFixedTokenOperator([]rune("false"), FALSE_LITERAL, 0)
+	testContext.AddFixedTokenOperator([]rune("//"), COMMENT_TOKEN, COMMENT_FLAG)
+	testContext.AddControlOperator([]rune("/*"), OPEN_COMMENT_FLAG)
+	testContext.AddControlOperator([]rune("*/"), CLOSE_COMMENT_FLAG)
 
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: PREFIX,
@@ -279,6 +282,54 @@ func TestParser_ParseSource(t *testing.T) {
 							},
 						},
 						properties: ifProperties,
+					},
+				},
+			},
+		},
+		{"Commented Code", bufio.NewReader(strings.NewReader("x1 := -0.9 /* this is a C style comment */\nx2 := x1 * x1 // and this is a single line comment\n - 0.9\nx3 /* third iteration */ := /* square */ x2 * x2 /* seed */ - 0.9\n// and one more comment to finish it off")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							Identifier{"x1"},
+							&Statement{
+								terms:      []AST{FloatLiteral{0.5}},
+								properties: negProperties,
+							},
+						},
+						properties: declareProperties,
+					},
+					&Statement{
+						terms: []AST{
+							Identifier{"x2"},
+							&Statement{
+								terms: []AST{
+									&Statement{
+										terms:      []AST{Identifier{"x1"}, Identifier{"x1"}},
+										properties: prodProperties,
+									},
+									FloatLiteral{0.5},
+								},
+								properties: subProperties,
+							},
+						},
+						properties: declareProperties,
+					},
+					&Statement{
+						terms: []AST{
+							Identifier{"x3"},
+							&Statement{
+								terms: []AST{
+									&Statement{
+										terms:      []AST{Identifier{"x2"}, Identifier{"x2"}},
+										properties: prodProperties,
+									},
+									FloatLiteral{0.5},
+								},
+								properties: subProperties,
+							},
+						},
+						properties: declareProperties,
 					},
 				},
 			},

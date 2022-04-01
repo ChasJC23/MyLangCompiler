@@ -109,47 +109,67 @@ func (tk *Tokeniser) ReadToken() {
 		if controlOps != 0 {
 			// skipping block comments
 			if controlOps&OPEN_COMMENT_FLAG != 0 {
-				tk.comment = tk.skipUntilControl(CLOSE_COMMENT_FLAG)
+				tk.comment, _ = tk.skipUntilControl(CLOSE_COMMENT_FLAG)
 				tk.currToken = COMMENT_TOKEN
 			} else
 			// skipping line comments
 			if controlOps&COMMENT_FLAG != 0 {
-				tk.comment = tk.skipUntilControl(NEWLINE_FLAG)
+				tk.comment, _ = tk.skipUntilControl(NEWLINE_FLAG)
 			} else
 			// parsing characters
 			if controlOps&OPEN_CHAR_FLAG != 0 {
 				// TODO: escaped code points? In any case, a character isn't always represented by itself in code (plus this could be improved anyways)
-				charContent := tk.skipUntilControl(CLOSE_CHAR_FLAG)
+				charContent, premature := tk.skipUntilControl(CLOSE_CHAR_FLAG)
+				if premature {
+					panic("non-terminated character")
+				}
 				tk.charLiteral = []rune(charContent)[0]
 				tk.currToken = CHAR_LITERAL
 			} else
 			// parsing strings
 			if controlOps&OPEN_STRING_FLAG != 0 {
-				tk.stringLiteral = tk.skipUntilControl(CLOSE_STRING_FLAG)
+				var premature bool
+				tk.stringLiteral, premature = tk.skipUntilControl(CLOSE_STRING_FLAG)
+				if premature {
+					panic("non-terminated string")
+				}
 				tk.currToken = STRING_LITERAL
 			}
+			return
 		} else if tk.currToken != NIL_TOKEN {
 			return
 		}
 	}
 
-	// anything else has to be an identifier
-	for unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune) {
-		identifierBuilder.WriteRune(tk.currRune)
-		tk.readRune()
+	if validIdentifier {
+		// anything else has to be an identifier
+		for unicode.IsLetter(tk.currRune) || unicode.IsDigit(tk.currRune) {
+			identifierBuilder.WriteRune(tk.currRune)
+			tk.readRune()
+		}
+		tk.currToken = IDENTIFIER_TOKEN
+		tk.identifier = identifierBuilder.String()
+
+		return
 	}
-	tk.currToken = IDENTIFIER_TOKEN
-	tk.identifier = identifierBuilder.String()
+
+	panic("unrecognised token")
 }
 
-func (tk *Tokeniser) skipUntilControl(controlBit uint) string {
+func (tk *Tokeniser) skipUntilControl(controlBit uint) (contents string, premature bool) {
 	buff := make([]rune, 0)
 	branch := tk.opctx.opTree.branches[tk.currRune]
 	searching := true
+	premature = false
 	var builder strings.Builder
 	depth := 1
 	for searching {
-		for branch == nil {
+		for branch == nil || (branch.childControlOps&controlBit) == 0 && (branch.controlOps&controlBit) == 0 {
+			if tk.currRune == '\000' {
+				searching = false
+				premature = true
+				break
+			}
 			length, _ := builder.WriteRune(tk.currRune)
 			tk.readRune()
 			branch = tk.opctx.opTree.branches[tk.currRune]
@@ -157,9 +177,11 @@ func (tk *Tokeniser) skipUntilControl(controlBit uint) string {
 		}
 		if (branch.controlOps & controlBit) != 0 {
 			searching = false
+			tk.readRune()
 		} else if (branch.childControlOps & controlBit) != 0 {
 			length, _ := builder.WriteRune(tk.currRune)
 			buff = append(buff, tk.currRune)
+			tk.readRune()
 			branch = branch.branches[tk.currRune]
 			depth += length
 		} else {
@@ -174,11 +196,17 @@ func (tk *Tokeniser) skipUntilControl(controlBit uint) string {
 			}
 			length, _ := builder.WriteRune(tk.currRune)
 			depth = length
+			tk.readRune()
+			branch = tk.opctx.opTree.branches[tk.currRune]
 		}
-		tk.readRune()
 	}
 	result := builder.String()
-	return result[:len(result)-depth]
+	if premature {
+		contents = result
+	} else {
+		contents = result[:len(result)-depth+1]
+	}
+	return
 }
 
 func (tk *Tokeniser) readRune() {
