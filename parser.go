@@ -32,7 +32,8 @@ func (p *Parser) ParseSource() AST {
 func (p *Parser) ParseCodeBlock() AST {
 	statements := make([]AST, 0)
 	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
-		statements = append(statements, p.ParseStatement())
+		nextStatement, _ := p.ParseStatement()
+		statements = append(statements, nextStatement)
 		if p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
 			p.tokeniser.ReadToken()
 		}
@@ -42,13 +43,12 @@ func (p *Parser) ParseCodeBlock() AST {
 
 // ParseStatement is responsible for parsing any arbitrary statement.
 // This may be any individual line of code.
-func (p *Parser) ParseStatement() AST {
+func (p *Parser) ParseStatement() (tree AST, parenthesized bool) {
 	precedenceListElement := p.opctx.precedenceList.Front()
-	result := p.ParsePrecedenceLevel(precedenceListElement)
-	return result
+	return p.ParsePrecedenceLevel(precedenceListElement)
 }
 
-func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) AST {
+func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	if precedenceListElement == nil {
 		return p.ParseLeaf()
 	}
@@ -75,16 +75,16 @@ func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) AST {
 	}
 }
 
-func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element) AST {
+func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
 	if !ok {
 		return p.ParseLeaf()
 	}
-	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
+	lhs, lp := p.ParsePrecedenceLevel(precedenceListElement.Next())
 
 	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
 	if opProperties == nil {
-		return lhs
+		return lhs, lp
 	}
 	p.tokeniser.ReadToken()
 
@@ -97,7 +97,7 @@ func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element
 	for {
 		opProperties = precedenceLevel.operators[p.tokeniser.currToken]
 		if opProperties == nil {
-			return expr
+			return expr, false
 		}
 		p.tokeniser.ReadToken()
 
@@ -107,16 +107,16 @@ func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element
 	}
 }
 
-func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Element) AST {
+func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
 	if !ok {
 		return p.ParseLeaf()
 	}
-	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
+	lhs, lp := p.ParsePrecedenceLevel(precedenceListElement.Next())
 
 	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
 	if opProperties == nil {
-		return lhs
+		return lhs, lp
 	}
 	p.tokeniser.ReadToken()
 
@@ -154,7 +154,7 @@ func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Elemen
 				*/
 				args[len(args)-1] = binRight.terms[0]
 			}
-			return NewStatement([]AST{NewStatement(args, opProperties), binRight}, impliedOpProp)
+			return NewStatement([]AST{NewStatement(args, opProperties), binRight}, impliedOpProp), false
 		}
 	}
 	/*
@@ -162,15 +162,15 @@ func (p *Parser) ParseImpliedRightAssociative(precedenceListElement *list.Elemen
 		 / \
 		a   b
 	*/
-	return NewStatement([]AST{lhs, rhs}, opProperties)
+	return NewStatement([]AST{lhs, rhs}, opProperties), false
 }
 
-func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) AST {
+func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
 	if !ok {
 		return p.ParseLeaf()
 	}
-	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
+	lhs, lp := p.ParsePrecedenceLevel(precedenceListElement.Next())
 	for {
 		opProperties := precedenceLevel.operators[p.tokeniser.currToken]
 
@@ -183,7 +183,7 @@ func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) AST {
 			// we know the next symbol isn't in this precedence level,
 			// but still check if it's a control token in case of higher precedence operators.
 			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
-				return lhs
+				return lhs, lp
 			} else {
 				opProperties = nilOpProp
 			}
@@ -198,19 +198,19 @@ func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) AST {
 	}
 }
 
-func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) AST {
+func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
 	if !ok {
 		return p.ParseLeaf()
 	}
-	lhs := p.ParsePrecedenceLevel(precedenceListElement.Next())
+	lhs, lp := p.ParsePrecedenceLevel(precedenceListElement.Next())
 	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
 	// same logic as left associative, just a bit of recursion to get the associativity right
 	// private function might be useful, quite a lot of redundancy here
 	if opProperties == nil {
 		nilOpProp := precedenceLevel.operators[NIL_TOKEN]
 		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
-			return lhs
+			return lhs, lp
 		} else {
 			opProperties = nilOpProp
 		}
@@ -219,10 +219,10 @@ func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) AST 
 	}
 	args := p.getInfixArguments(precedenceListElement, lhs, opProperties)
 
-	return NewStatement(args, opProperties)
+	return NewStatement(args, opProperties), false
 }
 
-func (p *Parser) ParsePrefix(precedenceListElement *list.Element) AST {
+func (p *Parser) ParsePrefix(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
 	if !ok {
 		return p.ParseLeaf()
@@ -247,17 +247,17 @@ func (p *Parser) ParsePrefix(precedenceListElement *list.Element) AST {
 				}
 				p.tokeniser.ReadToken()
 			} else {
-				argument = p.ParseStatement()
+				argument, _ = p.ParseStatement()
 			}
 		} else {
-			argument = p.ParsePrefix(precedenceListElement)
+			argument, _ = p.ParsePrefix(precedenceListElement)
 		}
 		argumentSlice[argumentIndex] = argument
 	}
-	return NewStatement(argumentSlice, opProperties)
+	return NewStatement(argumentSlice, opProperties), false
 }
 
-func (p *Parser) ParsePostfix(precedenceListElement *list.Element) AST {
+func (p *Parser) ParsePostfix(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
 	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
 	if !ok {
 		return p.ParseLeaf()
@@ -270,7 +270,8 @@ func (p *Parser) ParsePostfix(precedenceListElement *list.Element) AST {
 		opProperties := precedenceLevel.operators[p.tokeniser.currToken]
 		// for the symbols we don't recognise here, pass onto higher precedence parsing and add to the stack
 		if opProperties == nil {
-			stack.Push(p.ParsePrecedenceLevel(precedenceListElement.Next()))
+			arg, _ := p.ParsePrecedenceLevel(precedenceListElement.Next())
+			stack.Push(arg)
 		} else
 		// for the symbols we do recognise, replace top few elements of the stack with the parsed result
 		{
@@ -286,11 +287,12 @@ func (p *Parser) ParsePostfix(precedenceListElement *list.Element) AST {
 	if len(stack) != 1 {
 		panic("unused arguments in postfix expression")
 	}
-	return stack[0]
+	return stack[0], false
 }
 
-func (p *Parser) ParseLeaf() AST {
+func (p *Parser) ParseLeaf() (tree AST, parenthesized bool) {
 	var result AST
+	parenthesized = false
 	switch p.tokeniser.currToken {
 	case INT_LITERAL:
 		result = IntLiteral{p.tokeniser.intLiteral}
@@ -305,8 +307,9 @@ func (p *Parser) ParseLeaf() AST {
 	case FALSE_LITERAL:
 		result = BoolLiteral{false}
 	case OPEN_PARENS_TOKEN:
+		parenthesized = true
 		p.tokeniser.ReadToken()
-		result = p.ParseStatement()
+		result, _ = p.ParseStatement()
 		if p.tokeniser.currToken != CLOSE_PARENS_TOKEN {
 			panic("missing parentheses")
 		}
@@ -314,20 +317,21 @@ func (p *Parser) ParseLeaf() AST {
 		result = Identifier{p.tokeniser.identifier}
 	}
 	p.tokeniser.ReadToken()
-	return result
+	return result, parenthesized
 }
 
 func (p *Parser) getInfixArguments(termPrecedenceListElement *list.Element, firstArg AST, opProperties *OpProp) []AST {
 	args := make([]AST, 2, len(opProperties.subsequentSymbols)+2)
 	args[0] = firstArg
-	args[1] = p.ParsePrecedenceLevel(termPrecedenceListElement)
+	args[1], _ = p.ParsePrecedenceLevel(termPrecedenceListElement)
 	for i := 0; i < len(opProperties.subsequentSymbols); i++ {
 		nextSymbol := opProperties.subsequentSymbols[i]
 		if p.tokeniser.currToken == nextSymbol || p.tokeniser.currToken < NIL_TOKEN && nextSymbol == NIL_TOKEN {
 			if nextSymbol != NIL_TOKEN {
 				p.tokeniser.ReadToken()
 			}
-			args = append(args, p.ParsePrecedenceLevel(termPrecedenceListElement))
+			nextArg, _ := p.ParsePrecedenceLevel(termPrecedenceListElement)
+			args = append(args, nextArg)
 		} else {
 			panic("Unexpected symbol")
 		}

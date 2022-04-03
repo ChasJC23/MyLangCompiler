@@ -34,13 +34,13 @@ func (st Statement) String() string {
 	var builder strings.Builder
 	builder.WriteByte('[')
 	builder.WriteString(st.properties.initSymbol)
-	builder.WriteString("]{")
+	builder.WriteString("](")
 	builder.WriteByte(' ')
 	for _, term := range st.terms {
 		builder.WriteString(term.String())
 		builder.WriteByte(' ')
 	}
-	builder.WriteByte('}')
+	builder.WriteByte(')')
 	return builder.String()
 }
 
