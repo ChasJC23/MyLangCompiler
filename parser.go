@@ -58,17 +58,17 @@ func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) (tree
 	}
 	// check bitmask in precedence_level.go
 	switch precedenceLevel.properties & 0b111 {
-	case 0b000: // prefix
+	case PREFIX:
 		return p.ParsePrefix(precedenceListElement)
-	case 0b001: // postfix
+	case POSTFIX:
 		return p.ParsePostfix(precedenceListElement)
-	case 0b010: // infix left associative
+	case INFIX_LEFT_ASSOCIATIVE:
 		return p.ParseLeftAssociative(precedenceListElement)
-	case 0b011: // infix right associative
+	case INFIX_RIGHT_ASSOCIATIVE:
 		return p.ParseRightAssociative(precedenceListElement)
-	case 0b110: // implied operation infix left associative
+	case IMPLIED_OPERATION | INFIX_LEFT_ASSOCIATIVE:
 		return p.ParseImpliedLeftAssociative(precedenceListElement)
-	case 0b111: // implied operation infix right associative
+	case IMPLIED_OPERATION | INFIX_RIGHT_ASSOCIATIVE:
 		return p.ParseImpliedRightAssociative(precedenceListElement)
 	default:
 		panic("invalid configuration")
