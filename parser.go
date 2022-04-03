@@ -265,9 +265,10 @@ func (p *Parser) ParsePostfix(precedenceListElement *list.Element) (tree AST, pa
 	// stack based parsing
 	stack := make(ASTStack, 0)
 
+	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
+
 	// The stack should be the deciding factor for when we complete this precedence level
-	for len(stack) != 1 && p.tokeniser.currToken != STATEMENT_ENDING_TOKEN {
-		opProperties := precedenceLevel.operators[p.tokeniser.currToken]
+	for len(stack) != 1 && p.tokeniser.currToken != STATEMENT_ENDING_TOKEN || opProperties != nil {
 		// for the symbols we don't recognise here, pass onto higher precedence parsing and add to the stack
 		if opProperties == nil {
 			arg, _ := p.ParsePrecedenceLevel(precedenceListElement.Next())
@@ -281,8 +282,9 @@ func (p *Parser) ParsePostfix(precedenceListElement *list.Element) (tree AST, pa
 				argumentSlice[i] = stack.Pop()
 			}
 			stack.Push(NewStatement(argumentSlice, opProperties))
+			p.tokeniser.ReadToken()
 		}
-		p.tokeniser.ReadToken()
+		opProperties = precedenceLevel.operators[p.tokeniser.currToken]
 	}
 	if len(stack) != 1 {
 		panic("unused arguments in postfix expression")

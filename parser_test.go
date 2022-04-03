@@ -21,6 +21,12 @@ func TestParser_ParseSource(t *testing.T) {
 	testContext.AddControlOperator([]rune("*/"), CLOSE_COMMENT_FLAG)
 
 	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: INFIX_RIGHT_ASSOCIATIVE,
+		operators:  make(map[int]*OpProp),
+	})
+	infWhileProperties := testContext.AddOperatorToHighest([]string{"??"}, 0b10, 2)
+
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
 		properties: PREFIX,
 		operators:  make(map[int]*OpProp),
 	})
@@ -64,6 +70,12 @@ func TestParser_ParseSource(t *testing.T) {
 	prodProperties := testContext.AddOperatorToHighest([]string{"*"}, 0, 2)
 	divProperties := testContext.AddOperatorToHighest([]string{"/"}, 0, 2)
 	// juxProperties := testContext.AddOperatorToHighest([]string{}, 0, 2)
+	testContext.AddHighestPrecedenceLevel(&PrecedenceLevel{
+		properties: POSTFIX,
+		operators:  make(map[int]*OpProp),
+	})
+	// incProperties := testContext.AddOperatorToHighest([]string{"++"}, 0, 1)
+	decProperties := testContext.AddOperatorToHighest([]string{"--"}, 0, 1)
 	tests := []struct {
 		name       string
 		expression *bufio.Reader
@@ -334,6 +346,29 @@ func TestParser_ParseSource(t *testing.T) {
 				},
 			},
 		},
+		{"Infix code block", bufio.NewReader(strings.NewReader("x > 4 ?? { x--; }")), testContext,
+			&CodeBlock{
+				[]AST{
+					&Statement{
+						terms: []AST{
+							&Statement{
+								terms:      []AST{Identifier{"x"}, IntLiteral{4}},
+								properties: gtProperties,
+							},
+							&CodeBlock{
+								[]AST{
+									&Statement{
+										terms:      []AST{Identifier{"x"}},
+										properties: decProperties,
+									},
+								},
+							},
+						},
+						properties: infWhileProperties,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -341,10 +376,8 @@ func TestParser_ParseSource(t *testing.T) {
 				tokeniser: NewTokeniser(tt.expression, tt.context),
 				opctx:     tt.context,
 			}
-			t.Log(tt.want.String())
 			if got := p.ParseSource(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseSource() = %v, want %v", got, tt.want)
-				t.Log(got.String())
 			}
 		})
 	}
