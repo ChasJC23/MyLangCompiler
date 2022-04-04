@@ -22,6 +22,7 @@ const (
 	INFIX_LEFT_ASSOCIATIVE  = 0b10
 	INFIX_RIGHT_ASSOCIATIVE = 0b11
 	IMPLIED_OPERATION       = 0b100
+	DELIMITER               = 0b100
 )
 
 func (pl *PrecedenceLevel) OperatorExists(op *OpProp) bool {

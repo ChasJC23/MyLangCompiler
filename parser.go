@@ -70,9 +70,34 @@ func (p *Parser) ParsePrecedenceLevel(precedenceListElement *list.Element) (tree
 		return p.ParseImpliedLeftAssociative(precedenceListElement)
 	case IMPLIED_OPERATION | INFIX_RIGHT_ASSOCIATIVE:
 		return p.ParseImpliedRightAssociative(precedenceListElement)
+	case DELIMITER:
+		return p.ParseDelimiter(precedenceListElement)
 	default:
 		panic("invalid configuration")
 	}
+}
+
+func (p *Parser) ParseDelimiter(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
+	precedenceLevel, ok := precedenceListElement.Value.(*PrecedenceLevel)
+	if !ok {
+		return p.ParseLeaf()
+	}
+	firstArg, lp := p.ParsePrecedenceLevel(precedenceListElement.Next())
+
+	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
+	if opProperties == nil {
+		return firstArg, lp
+	}
+
+	arguments := make([]AST, 1, 2)
+	arguments[0] = firstArg
+	for opProperties != nil {
+		p.tokeniser.ReadToken()
+		nextArg, _ := p.ParsePrecedenceLevel(precedenceListElement.Next())
+		arguments = append(arguments, nextArg)
+		opProperties = precedenceLevel.operators[p.tokeniser.currToken]
+	}
+	return NewCodeBlock(arguments), false
 }
 
 func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
