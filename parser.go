@@ -17,7 +17,7 @@ func NewParser(tokeniser *Tokeniser) *Parser {
 // ParseSource is responsible for parsing an entire source file
 func (p *Parser) ParseSource() AST {
 
-	result := p.ParseCodeBlock()
+	result, _ := p.ParseStatement()
 
 	// I realise this is more of an expression thing,
 	// but let's include it just in case.
@@ -28,21 +28,7 @@ func (p *Parser) ParseSource() AST {
 	return result
 }
 
-// ParseCodeBlock is responsible for parsing a specific code block
-func (p *Parser) ParseCodeBlock() AST {
-	statements := make([]AST, 0)
-	for p.tokeniser.currToken != EOF_TOKEN && p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
-		nextStatement, _ := p.ParseStatement()
-		statements = append(statements, nextStatement)
-		if p.tokeniser.currToken == STATEMENT_ENDING_TOKEN {
-			p.tokeniser.ReadToken()
-		}
-	}
-	return NewCodeBlock(statements)
-}
-
 // ParseStatement is responsible for parsing any arbitrary statement.
-// This may be any individual line of code.
 func (p *Parser) ParseStatement() (tree AST, parenthesized bool) {
 	precedenceListElement := p.opctx.precedenceList.Front()
 	return p.ParsePrecedenceLevel(precedenceListElement)
@@ -91,13 +77,14 @@ func (p *Parser) ParseDelimiter(precedenceListElement *list.Element) (tree AST, 
 
 	arguments := make([]AST, 1, 2)
 	arguments[0] = firstArg
-	for opProperties != nil {
+	nextOpProp := opProperties
+	for nextOpProp != nil {
 		p.tokeniser.ReadToken()
 		nextArg, _ := p.ParsePrecedenceLevel(precedenceListElement.Next())
 		arguments = append(arguments, nextArg)
-		opProperties = precedenceLevel.operators[p.tokeniser.currToken]
+		nextOpProp = precedenceLevel.operators[p.tokeniser.currToken]
 	}
-	return NewCodeBlock(arguments), false
+	return NewStatement(arguments, opProperties), false
 }
 
 func (p *Parser) ParseImpliedLeftAssociative(precedenceListElement *list.Element) (tree AST, parenthesized bool) {
@@ -207,7 +194,7 @@ func (p *Parser) ParseLeftAssociative(precedenceListElement *list.Element) (tree
 
 			// we know the next symbol isn't in this precedence level,
 			// but still check if it's a control token in case of higher precedence operators.
-			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
+			if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
 				return lhs, lp
 			} else {
 				opProperties = nilOpProp
@@ -234,7 +221,7 @@ func (p *Parser) ParseRightAssociative(precedenceListElement *list.Element) (tre
 	// private function might be useful, quite a lot of redundancy here
 	if opProperties == nil {
 		nilOpProp := precedenceLevel.operators[NIL_TOKEN]
-		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == STATEMENT_ENDING_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
+		if nilOpProp == nil || p.tokeniser.currToken > NIL_TOKEN || p.tokeniser.currToken == EOF_TOKEN {
 			return lhs, lp
 		} else {
 			opProperties = nilOpProp
@@ -260,23 +247,9 @@ func (p *Parser) ParsePrefix(precedenceListElement *list.Element) (tree AST, par
 	argumentSlice := make([]AST, argumentCount)
 	p.tokeniser.ReadToken()
 	// uh... that works I guess
-	for argumentIndex, bit := 0, uint(1); argumentIndex < argumentCount; argumentIndex, bit = argumentIndex+1, bit<<1 {
-		isCodeBlock := opProperties.codeBlockArguments&bit != 0
+	for argumentIndex := 0; argumentIndex < argumentCount; argumentIndex = argumentIndex + 1 {
 		var argument AST
-		if isCodeBlock {
-			if p.tokeniser.currToken == OPEN_CODE_BLOCK_TOKEN {
-				p.tokeniser.ReadToken()
-				argument = p.ParseCodeBlock()
-				if p.tokeniser.currToken != CLOSE_CODE_BLOCK_TOKEN {
-					panic("missing close code block symbol")
-				}
-				p.tokeniser.ReadToken()
-			} else {
-				argument, _ = p.ParseStatement()
-			}
-		} else {
-			argument, _ = p.ParsePrefix(precedenceListElement)
-		}
+		argument, _ = p.ParsePrefix(precedenceListElement)
 		argumentSlice[argumentIndex] = argument
 	}
 	return NewStatement(argumentSlice, opProperties), false
@@ -293,7 +266,7 @@ func (p *Parser) ParsePostfix(precedenceListElement *list.Element) (tree AST, pa
 	opProperties := precedenceLevel.operators[p.tokeniser.currToken]
 
 	// The stack should be the deciding factor for when we complete this precedence level
-	for len(stack) != 1 && p.tokeniser.currToken != STATEMENT_ENDING_TOKEN || opProperties != nil {
+	for len(stack) != 1 || opProperties != nil {
 		// for the symbols we don't recognise here, pass onto higher precedence parsing and add to the stack
 		if opProperties == nil {
 			arg, _ := p.ParsePrecedenceLevel(precedenceListElement.Next())
@@ -333,15 +306,25 @@ func (p *Parser) ParseLeaf() (tree AST, parenthesized bool) {
 		result = BoolLiteral{true}
 	case FALSE_LITERAL:
 		result = BoolLiteral{false}
-	case OPEN_PARENS_TOKEN:
-		parenthesized = true
-		p.tokeniser.ReadToken()
-		result, _ = p.ParseStatement()
-		if p.tokeniser.currToken != CLOSE_PARENS_TOKEN {
-			panic("missing parentheses")
-		}
 	case IDENTIFIER_TOKEN:
 		result = Identifier{p.tokeniser.identifier}
+	default:
+		if p.tokeniser.currToken <= MAX_PARENS_TOKEN && (p.tokeniser.currToken+MAX_PARENS_TOKEN)&1 == OPEN_PARENS_MOD_2 {
+			precedenceListElement := p.opctx.precedenceList.Front()
+			precedenceLevel := precedenceListElement.Value.(*PrecedenceLevel)
+			for precedenceLevel.operators[p.tokeniser.currToken] == nil {
+				precedenceListElement = precedenceListElement.Next()
+				precedenceLevel = precedenceListElement.Value.(*PrecedenceLevel)
+			}
+			p.tokeniser.ReadToken()
+			result, _ = p.ParseDelimiter(precedenceListElement)
+			parenthesized = true
+			if (p.tokeniser.currToken+MAX_PARENS_TOKEN)&1 != CLOSE_PARENS_MOD_2 {
+				panic("missing close parenthesis")
+			}
+		} else {
+			panic("unrecognised token")
+		}
 	}
 	p.tokeniser.ReadToken()
 	return result, parenthesized

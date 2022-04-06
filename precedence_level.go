@@ -17,12 +17,12 @@ precedence level bitmask:
 */
 
 const (
-	PREFIX                  = 0b00
-	POSTFIX                 = 0b01
-	INFIX_LEFT_ASSOCIATIVE  = 0b10
-	INFIX_RIGHT_ASSOCIATIVE = 0b11
+	PREFIX                  = 0b000
+	POSTFIX                 = 0b001
+	INFIX_LEFT_ASSOCIATIVE  = 0b010
+	INFIX_RIGHT_ASSOCIATIVE = 0b011
 	IMPLIED_OPERATION       = 0b100
-	DELIMITER               = 0b100
+	DELIMITER               = 0b101
 )
 
 func (pl *PrecedenceLevel) OperatorExists(op *OpProp) bool {

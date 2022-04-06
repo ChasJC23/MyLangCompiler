@@ -9,22 +9,6 @@ type AST interface {
 	String() string
 }
 
-type CodeBlock struct {
-	lines []AST
-}
-
-func (cb CodeBlock) String() string {
-	var builder strings.Builder
-	builder.WriteByte('{')
-	builder.WriteByte('\n')
-	for _, line := range cb.lines {
-		builder.WriteString(line.String())
-		builder.WriteByte('\n')
-	}
-	builder.WriteByte('}')
-	return builder.String()
-}
-
 type Statement struct {
 	terms      []AST
 	properties *OpProp
@@ -111,12 +95,6 @@ func (bl BoolLiteral) String() string {
 	} else {
 		return "false"
 	}
-}
-
-func NewCodeBlock(lines []AST) *CodeBlock {
-	result := new(CodeBlock)
-	result.lines = lines
-	return result
 }
 
 func NewStatement(terms []AST, properties *OpProp) *Statement {

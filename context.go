@@ -8,6 +8,7 @@ type OpContext struct {
 	// the list of all precedence levels used in a particular parsing session
 	precedenceList *list.List
 	opToken        int
+	parensToken    int
 }
 
 func NewOpContext() *OpContext {
@@ -127,4 +128,59 @@ func (ctx *OpContext) AddLowerPrecedenceLevel(level *PrecedenceLevel, mark *list
 
 func (ctx *OpContext) AddHigherPrecedenceLevel(level *PrecedenceLevel, mark *list.Element) {
 	ctx.precedenceList.InsertAfter(level, mark)
+}
+
+func (ctx *OpContext) AddLowestDelimiterOperator(leftParens, delim, rightParens string) *OpProp {
+	delimiterPrecedence := &PrecedenceLevel{
+		properties: DELIMITER,
+		operators:  make(map[int]*OpProp),
+	}
+	ctx.AddLowestPrecedenceLevel(delimiterPrecedence)
+	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
+}
+
+func (ctx *OpContext) AddHighestDelimiterOperator(leftParens, delim, rightParens string) *OpProp {
+	delimiterPrecedence := &PrecedenceLevel{
+		properties: DELIMITER,
+		operators:  make(map[int]*OpProp),
+	}
+	ctx.AddHighestPrecedenceLevel(delimiterPrecedence)
+	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
+}
+
+func (ctx *OpContext) AddLowerDelimiterOperator(leftParens, delim, rightParens string, mark *list.Element) *OpProp {
+	delimiterPrecedence := &PrecedenceLevel{
+		properties: DELIMITER,
+		operators:  make(map[int]*OpProp),
+	}
+	ctx.AddLowerPrecedenceLevel(delimiterPrecedence, mark)
+	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
+}
+
+func (ctx *OpContext) AddHigherDelimiterOperator(leftParens, delim, rightParens string, mark *list.Element) *OpProp {
+	delimiterPrecedence := &PrecedenceLevel{
+		properties: DELIMITER,
+		operators:  make(map[int]*OpProp),
+	}
+	ctx.AddHigherPrecedenceLevel(delimiterPrecedence, mark)
+	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
+}
+
+func (ctx *OpContext) addDelimiterOperator(precedenceLevel *PrecedenceLevel, leftParens, delim, rightParens string) *OpProp {
+	op := ctx.AddOperator([]string{delim}, precedenceLevel, 0, 0)
+	if op == nil || ctx.opTree.OperatorExists([]rune(leftParens)) || ctx.opTree.OperatorExists([]rune(rightParens)) {
+		return nil
+	}
+	success := ctx.opTree.AddOperator([]rune(leftParens), ctx.parensToken, 0)
+	if !success {
+		return nil
+	}
+	ctx.parensToken--
+	success = ctx.opTree.AddOperator([]rune(rightParens), ctx.parensToken, 0)
+	if success {
+		ctx.parensToken--
+		return op
+	} else {
+		return nil
+	}
 }
