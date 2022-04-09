@@ -3,7 +3,8 @@ package main
 type PrecedenceLevel struct {
 	properties uint8
 	// pointers to what each operator means in this precedence level
-	operators map[int]*OpProp
+	operators   map[int]*OpProp
+	defaultNext *PrecedenceLevel
 }
 
 /*

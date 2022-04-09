@@ -1,12 +1,10 @@
 package main
 
-import "container/list"
-
 type OpContext struct {
 	// the tree used to find the token for a given operator
 	opTree *OperatorTree
 	// the list of all precedence levels used in a particular parsing session
-	precedenceList *list.List
+	rootPrecedence *PrecedenceLevel
 	opToken        int
 	parensToken    int
 }
@@ -14,8 +12,8 @@ type OpContext struct {
 func NewOpContext() *OpContext {
 	r := new(OpContext)
 	r.opTree = NewOperatorTree()
-	r.precedenceList = list.New()
 	r.opToken = INIT_TOKEN
+	r.parensToken = MAX_PARENS_TOKEN
 	r.opTree.AddOperatorRune(EOF_RUNE, EOF_TOKEN, 0)
 	r.opTree.AddOperatorRune(NEWLINE_RUNE, NEWLINE_TOKEN, NEWLINE_FLAG)
 	return r
@@ -76,22 +74,8 @@ func (ctx *OpContext) addOperatorToken(op []rune) (int, bool) {
 	return token, success
 }
 
-func (ctx *OpContext) AddOperatorAt(symbols []string, precedence int, codeBlockArguments uint, argumentCount int) *OpProp {
-	precedenceListElement := ctx.precedenceList.Front()
-	for i := 0; i < precedence; i++ {
-		precedenceListElement = precedenceListElement.Next()
-	}
-	return ctx.AddOperator(symbols, precedenceListElement.Value.(*PrecedenceLevel), codeBlockArguments, argumentCount)
-}
-
 func (ctx *OpContext) AddOperatorToLowest(symbols []string, codeBlockArguments uint, argumentCount int) *OpProp {
-	precedenceListElement := ctx.precedenceList.Front()
-	return ctx.AddOperator(symbols, precedenceListElement.Value.(*PrecedenceLevel), codeBlockArguments, argumentCount)
-}
-
-func (ctx *OpContext) AddOperatorToHighest(symbols []string, codeBlockArguments uint, argumentCount int) *OpProp {
-	precedenceListElement := ctx.precedenceList.Back()
-	return ctx.AddOperator(symbols, precedenceListElement.Value.(*PrecedenceLevel), codeBlockArguments, argumentCount)
+	return ctx.AddOperator(symbols, ctx.rootPrecedence, codeBlockArguments, argumentCount)
 }
 
 func (ctx *OpContext) AddControlOperator(op []rune, flags uint) bool {
@@ -114,20 +98,16 @@ func (ctx *OpContext) RenameOperator(oldName []rune, newName []rune) {
 	newBranch.operatorToken = token
 }
 
-func (ctx *OpContext) AddLowestPrecedenceLevel(precedenceLevel *PrecedenceLevel) {
-	ctx.precedenceList.PushFront(precedenceLevel)
+func (ctx *OpContext) SetRootPrecedenceLevel(newRoot *PrecedenceLevel) {
+	originalRoot := ctx.rootPrecedence
+	newRoot.defaultNext = originalRoot
+	ctx.rootPrecedence = newRoot
 }
 
-func (ctx *OpContext) AddHighestPrecedenceLevel(precedenceLevel *PrecedenceLevel) {
-	ctx.precedenceList.PushBack(precedenceLevel)
-}
-
-func (ctx *OpContext) AddLowerPrecedenceLevel(level *PrecedenceLevel, mark *list.Element) {
-	ctx.precedenceList.InsertBefore(level, mark)
-}
-
-func (ctx *OpContext) AddHigherPrecedenceLevel(level *PrecedenceLevel, mark *list.Element) {
-	ctx.precedenceList.InsertAfter(level, mark)
+func (ctx *OpContext) AddHigherPrecedenceLevel(new *PrecedenceLevel, mark *PrecedenceLevel) {
+	originalNext := mark.defaultNext
+	new.defaultNext = originalNext
+	mark.defaultNext = new
 }
 
 func (ctx *OpContext) AddLowestDelimiterOperator(leftParens, delim, rightParens string) *OpProp {
@@ -135,29 +115,11 @@ func (ctx *OpContext) AddLowestDelimiterOperator(leftParens, delim, rightParens 
 		properties: DELIMITER,
 		operators:  make(map[int]*OpProp),
 	}
-	ctx.AddLowestPrecedenceLevel(delimiterPrecedence)
+	ctx.SetRootPrecedenceLevel(delimiterPrecedence)
 	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
 }
 
-func (ctx *OpContext) AddHighestDelimiterOperator(leftParens, delim, rightParens string) *OpProp {
-	delimiterPrecedence := &PrecedenceLevel{
-		properties: DELIMITER,
-		operators:  make(map[int]*OpProp),
-	}
-	ctx.AddHighestPrecedenceLevel(delimiterPrecedence)
-	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
-}
-
-func (ctx *OpContext) AddLowerDelimiterOperator(leftParens, delim, rightParens string, mark *list.Element) *OpProp {
-	delimiterPrecedence := &PrecedenceLevel{
-		properties: DELIMITER,
-		operators:  make(map[int]*OpProp),
-	}
-	ctx.AddLowerPrecedenceLevel(delimiterPrecedence, mark)
-	return ctx.addDelimiterOperator(delimiterPrecedence, leftParens, delim, rightParens)
-}
-
-func (ctx *OpContext) AddHigherDelimiterOperator(leftParens, delim, rightParens string, mark *list.Element) *OpProp {
+func (ctx *OpContext) AddHigherDelimiterOperator(leftParens, delim, rightParens string, mark *PrecedenceLevel) *OpProp {
 	delimiterPrecedence := &PrecedenceLevel{
 		properties: DELIMITER,
 		operators:  make(map[int]*OpProp),
