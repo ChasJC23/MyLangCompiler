@@ -9,11 +9,8 @@ import (
 
 func TestParser_ParseSource(t *testing.T) {
 	testContext := NewOpContext()
-	testContext.opTree.AddOperatorRune('{', OPEN_CODE_BLOCK_TOKEN, 0)
-	testContext.opTree.AddOperatorRune('}', CLOSE_CODE_BLOCK_TOKEN, 0)
-	testContext.opTree.AddOperatorRune('(', OPEN_PARENS_TOKEN, 0)
-	testContext.opTree.AddOperatorRune(')', CLOSE_PARENS_TOKEN, 0)
-	testContext.opTree.AddOperatorRune(';', STATEMENT_ENDING_TOKEN, 0)
+	testContext.AddLowestDelimiterOperator("{", ";", "}")
+	testContext.AddLowestDelimiterOperator("(", ",", ")")
 	testContext.AddFixedTokenOperator([]rune("true"), TRUE_LITERAL, 0)
 	testContext.AddFixedTokenOperator([]rune("false"), FALSE_LITERAL, 0)
 	testContext.AddFixedTokenOperator([]rune("//"), COMMENT_TOKEN, COMMENT_FLAG)

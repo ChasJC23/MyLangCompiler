@@ -21,7 +21,7 @@ func NewOpContext() *OpContext {
 
 // AddOperator adds a new operator to the current context and the given precedence level.
 // It returns a pointer to the properties of the generated operator, if generation was successful.
-func (ctx *OpContext) AddOperator(symbols []string, precedenceLevel *PrecedenceLevel, codeBlockArguments uint, argumentCount int) *OpProp {
+func (ctx *OpContext) AddOperator(symbols []string, precedenceLevel *PrecedenceLevel, argumentPrecedences []*PrecedenceLevel, argumentCount int) *OpProp {
 	var op string
 	if len(symbols) == 0 {
 		op = ""
@@ -47,7 +47,7 @@ func (ctx *OpContext) AddOperator(symbols []string, precedenceLevel *PrecedenceL
 	if success {
 		properties := new(OpProp)
 		properties.argumentCount = argumentCount
-		properties.codeBlockArguments = codeBlockArguments
+		properties.argumentPrecedences = argumentPrecedences
 		properties.subsequentSymbols = subsequentSymbols
 		properties.initSymbol = op // for debugging purposes
 		precedenceLevel.operators[token] = properties
@@ -74,8 +74,8 @@ func (ctx *OpContext) addOperatorToken(op []rune) (int, bool) {
 	return token, success
 }
 
-func (ctx *OpContext) AddOperatorToLowest(symbols []string, codeBlockArguments uint, argumentCount int) *OpProp {
-	return ctx.AddOperator(symbols, ctx.rootPrecedence, codeBlockArguments, argumentCount)
+func (ctx *OpContext) AddOperatorToLowest(symbols []string, argumentPrecedences []*PrecedenceLevel, argumentCount int) *OpProp {
+	return ctx.AddOperator(symbols, ctx.rootPrecedence, argumentPrecedences, argumentCount)
 }
 
 func (ctx *OpContext) AddControlOperator(op []rune, flags uint) bool {
@@ -129,7 +129,7 @@ func (ctx *OpContext) AddHigherDelimiterOperator(leftParens, delim, rightParens 
 }
 
 func (ctx *OpContext) addDelimiterOperator(precedenceLevel *PrecedenceLevel, leftParens, delim, rightParens string) *OpProp {
-	op := ctx.AddOperator([]string{delim}, precedenceLevel, 0, 0)
+	op := ctx.AddOperator([]string{delim}, precedenceLevel, nil, 0)
 	if op == nil || ctx.opTree.OperatorExists([]rune(leftParens)) || ctx.opTree.OperatorExists([]rune(rightParens)) {
 		return nil
 	}

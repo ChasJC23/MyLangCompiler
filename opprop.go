@@ -1,9 +1,9 @@
 package main
 
 type OpProp struct {
-	subsequentSymbols  []int
-	codeBlockArguments uint
-	requireParens      uint
-	argumentCount      int
-	initSymbol         string // for debugging purposes
+	subsequentSymbols   []int
+	argumentPrecedences []*PrecedenceLevel
+	requireParens       uint
+	argumentCount       int
+	initSymbol          string // for debugging purposes
 }
